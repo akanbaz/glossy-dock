@@ -98,15 +98,21 @@ if not missing and not unused:
 sys.exit(1 if missing or unused else 0)
 EOF
 
-# The committed SVGs must be exactly what the generator produces.
+# The committed SVGs must be exactly what the generator produces. (Compared in Python:
+# minimal images such as archlinux:latest don't ship cmp/diff.)
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 python3 tools/gen-panel-svg.py "$tmp/style" >/dev/null
-for f in widgets translucent/widgets solid/widgets opaque/widgets; do
-    cmp -s "$tmp/style/$f/panel-background.svg" "plasma-style/glossy-glass/$f/panel-background.svg" \
-        || fail "plasma-style/glossy-glass/$f/panel-background.svg is out of date; run tools/gen-panel-svg.py"
-done
-pass "style SVGs match tools/gen-panel-svg.py"
+python3 - "$tmp/style" <<'PY' && pass "style SVGs match tools/gen-panel-svg.py" || failed=1
+import pathlib, sys
+fresh = pathlib.Path(sys.argv[1])
+stale = [f for f in ("widgets", "translucent/widgets", "solid/widgets", "opaque/widgets")
+         if (fresh / f / "panel-background.svg").read_bytes()
+         != pathlib.Path("plasma-style/glossy-glass", f, "panel-background.svg").read_bytes()]
+for f in stale:
+    print(f"FAIL: plasma-style/glossy-glass/{f}/panel-background.svg is out of date; run tools/gen-panel-svg.py")
+sys.exit(1 if stale else 0)
+PY
 
 # --- shell --------------------------------------------------------------------
 shell_files=(install.sh uninstall.sh scripts/*.sh plasmoid/contents/code/actions.sh)

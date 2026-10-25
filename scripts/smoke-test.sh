@@ -32,7 +32,7 @@ if [[ -z "${GLOSSY_SMOKE_INNER:-}" ]]; then
     export XDG_CACHE_HOME="$HOME/.cache" XDG_STATE_HOME="$HOME/.local/state"
     export XDG_RUNTIME_DIR="$work/runtime"
     mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_CACHE_HOME" "$XDG_STATE_HOME"
-    mkdir -m 700 -p "$XDG_RUNTIME_DIR"
+    mkdir -m 700 "$XDG_RUNTIME_DIR"
     export WAYLAND_DISPLAY=wayland-glossy QT_QPA_PLATFORM=wayland XDG_SESSION_TYPE=wayland
     export XDG_CURRENT_DESKTOP=KDE KDE_FULL_SESSION=true KDE_SESSION_VERSION=6
     # Qt logs to the journal when stderr is not a terminal; the test needs the logs here.
