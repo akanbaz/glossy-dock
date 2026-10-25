@@ -60,6 +60,7 @@ work=${GLOSSY_SMOKE_WORK:?}
 case "$HOME" in "$work"/*) ;; *) echo "refusing to run: HOME is not isolated" >&2; exit 2 ;; esac
 kwin_pid=""
 plasma_pid=""
+xvfb_pid=""
 failed=0
 
 # Every process attached to this private bus, including services D-Bus started on demand.
@@ -80,6 +81,7 @@ cleanup() {
     [[ $status -ne 0 ]] && KEEP_SMOKE_LOGS=1
     [[ -n "$plasma_pid" ]] && kill "$plasma_pid" 2>/dev/null
     [[ -n "$kwin_pid" ]] && kill "$kwin_pid" 2>/dev/null
+    [[ -n "$xvfb_pid" ]] && kill "$xvfb_pid" 2>/dev/null
     sleep 1
     # shellcheck disable=SC2046
     kill $(session_pids) 2>/dev/null
@@ -214,15 +216,23 @@ require_kwin() {
 # ------------------------------------------------------------------- session
 
 step "Starting a virtual KWin"
-# Without a GPU render device (CI containers) KWin has no renderer and quits as soon as a
-# window needs compositing; use its CPU-only QPainter renderer there instead.
-if ! compgen -G "/dev/dri/renderD*" >/dev/null; then
-    echo "    no GPU render device; using KWin's software renderer"
-    export KWIN_COMPOSE=Q
+# KWin's off-screen backend needs a GPU render device. Without one (CI containers) it has
+# no renderer and quits as soon as a window needs compositing, so nest KWin in Xvfb
+# instead, which renders on the CPU through Mesa.
+if compgen -G "/dev/dri/renderD*" >/dev/null; then
+    kwin_wayland --virtual --no-lockscreen --no-global-shortcuts --socket "$WAYLAND_DISPLAY" \
+        --width 1920 --height 1080 >"$work/kwin.log" 2>&1 &
+    kwin_pid=$!
+else
+    command -v Xvfb >/dev/null 2>&1 || { echo "FAIL: no GPU render device, and Xvfb isn't installed" >&2; exit 2; }
+    echo "    no GPU render device; running KWin inside Xvfb"
+    Xvfb :97 -screen 0 1920x1080x24 -nolisten tcp >"$work/xvfb.log" 2>&1 &
+    xvfb_pid=$!
+    wait_for "Xvfb" 40 test -S /tmp/.X11-unix/X97 || { cat "$work/xvfb.log"; exit 1; }
+    kwin_wayland --x11-display :97 --no-lockscreen --no-global-shortcuts --socket "$WAYLAND_DISPLAY" \
+        --width 1920 --height 1080 >"$work/kwin.log" 2>&1 &
+    kwin_pid=$!
 fi
-kwin_wayland --virtual --no-lockscreen --no-global-shortcuts --socket "$WAYLAND_DISPLAY" \
-    --width 1920 --height 1080 >"$work/kwin.log" 2>&1 &
-kwin_pid=$!
 wait_for "KWin" 60 test -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" || { cat "$work/kwin.log"; exit 1; }
 
 step "Installing packages into the temporary home"
