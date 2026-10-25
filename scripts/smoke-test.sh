@@ -76,6 +76,8 @@ session_pids() {
 cleanup() {
     local status=$?
     set +e
+    # Any failure, including an unexpected abort, keeps the logs.
+    [[ $status -ne 0 ]] && KEEP_SMOKE_LOGS=1
     [[ -n "$plasma_pid" ]] && kill "$plasma_pid" 2>/dev/null
     [[ -n "$kwin_pid" ]] && kill "$kwin_pid" 2>/dev/null
     sleep 1
@@ -200,6 +202,15 @@ window_count() {
 
 has_window() { [[ "$(window_count "$1")" -ge 1 ]]; }
 
+# Stop at once (with KWin's last words) if the compositor has gone away.
+require_kwin() {
+    if ! kill -0 "$kwin_pid" 2>/dev/null; then
+        echo "FAIL: KWin is no longer running ($1). Last lines of its log:"
+        tail -40 "$work/kwin.log" | sed 's/^/    /'
+        exit 1
+    fi
+}
+
 # ------------------------------------------------------------------- session
 
 step "Starting a virtual KWin"
@@ -309,8 +320,11 @@ step "Apps opening and closing (bottom dock)"
 base=$(dock_len bottom)
 pitch=47 # one 29px icon plus one 18px gap
 
+require_kwin "before opening apps"
 konsole --separate >"$work/konsole.log" 2>&1 &
 konsole_pid=$!
+sleep 2
+require_kwin "after starting Konsole"
 wait_for "Konsole's window" 40 has_window Konsole || fail "Konsole didn't open"
 sleep 1
 wait_apps "$bottom_id" "System Settings | Konsole"
@@ -318,6 +332,8 @@ wait_bottom "$base" "pinned app opened, nothing added"
 
 "$qml_bin" "$ROOT/tests/TestWindow.qml" >"$work/testwindow.log" 2>&1 &
 testwin_pid=$!
+sleep 2
+require_kwin "after opening the test window"
 wait_for "the test window" 40 has_window "Glossy Dock test window" || fail "test window didn't open"
 wait_bottom $((base + pitch)) "unpinned app opened, one slot added"
 
