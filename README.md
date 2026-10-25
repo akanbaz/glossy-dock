@@ -118,6 +118,9 @@ tools/gen-panel-svg.py # regenerate the Glossy Glass SVGs after changing the gen
 
 The smoke test never touches your running desktop or settings: it runs its own KWin
 off-screen with a private D-Bus session and a temporary home folder.
+It needs a GPU render device (`/dev/dri/renderD*`) for the steps that open app windows;
+without one, as on GitHub's CI runners, it runs everything else and reports those steps as
+skipped. Run it locally before releases.
 
 Releases: bump `Version` in the three `metadata.json` files (lint checks they match), add a
 CHANGELOG entry, then tag `v<version>` and push the tag; CI builds and publishes the release.
