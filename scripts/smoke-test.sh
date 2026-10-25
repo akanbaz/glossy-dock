@@ -20,6 +20,7 @@
 # Any error or warning that Plasma logs from the dock fails the test.
 #
 # Usage: scripts/smoke-test.sh [screenshot.png]
+# With SMOKE_LOG_DIR set, a failing run copies its logs there (CI uploads them).
 # Needs: kwin_wayland, plasmashell, dbus-run-session, qdbus6, kpackagetool6, konsole,
 #        the Qt 6 qml tool; optional: spectacle (screenshot).
 
@@ -83,7 +84,11 @@ cleanup() {
     sleep 0.5
     # shellcheck disable=SC2046
     kill -9 $(session_pids) 2>/dev/null
-    if [[ -n "${KEEP_SMOKE_LOGS:-}" ]]; then
+    if [[ -n "${KEEP_SMOKE_LOGS:-}" && -n "${SMOKE_LOG_DIR:-}" ]]; then
+        mkdir -p "$SMOKE_LOG_DIR" && cp "$work"/*.log "$work"/*.txt "$SMOKE_LOG_DIR"/ 2>/dev/null
+        echo "logs copied to $SMOKE_LOG_DIR"
+        rm -rf "$work"
+    elif [[ -n "${KEEP_SMOKE_LOGS:-}" ]]; then
         echo "logs kept in $work"
     else
         rm -rf "$work"
@@ -292,6 +297,8 @@ rb=$(grep -oP 'bottom=\K[0-9]+' <<<"$reported" || echo 0)
 rt=$(grep -oP 'top=\K[0-9]+' <<<"$reported" || echo 0)
 [[ $((b - rb)) -eq $((t - rt)) ]] || fail "reported lengths ($reported) disagree with the windows ($windows)"
 
+# Optional, for looking at by eye. (On GitHub's software-rendered KWin the screenshot
+# request crashes the compositor, so CI doesn't ask for one.)
 if [[ -n "$screenshot" ]] && command -v spectacle >/dev/null 2>&1; then
     spectacle -b -n -f -o "$screenshot" >/dev/null 2>&1 && echo "    screenshot: $screenshot"
 fi

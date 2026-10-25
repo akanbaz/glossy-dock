@@ -44,10 +44,11 @@ jobs:
         run: |
           useradd -m tester
           chown -R tester "$GITHUB_WORKSPACE"
-          sudo -u tester env XDG_RUNTIME_DIR=/tmp ./scripts/smoke-test.sh "$GITHUB_WORKSPACE/smoke.png"
+          # No screenshot here: capturing the screen crashes KWin's software renderer.
+          sudo -u tester env XDG_RUNTIME_DIR=/tmp SMOKE_LOG_DIR="$GITHUB_WORKSPACE/smoke-logs" ./scripts/smoke-test.sh
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: failure()
         with:
-          name: smoke-screenshot
-          path: smoke.png
+          name: smoke-logs
+          path: smoke-logs/
           if-no-files-found: ignore
