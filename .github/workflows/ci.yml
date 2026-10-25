@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint-and-build:
+    name: Lint and build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Lint
+        run: ./scripts/lint.sh
+      - name: Build release files
+        run: ./scripts/build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: dist/
+
+  plasma:
+    name: Plasma (Arch Linux, current Plasma)
+    runs-on: ubuntu-24.04
+    container: archlinux:latest
+    # Runs the dock in a real, headless Plasma session. Not required yet: make it required
+    # once it has passed on GitHub's runners a few times.
+    continue-on-error: true
+    steps:
+      - name: Install Plasma
+        run: |
+          pacman -Syu --noconfirm --needed git python sudo dbus mesa \
+            plasma-workspace kwin kpackage kpipewire plasma5support \
+            qt6-declarative qt6-tools systemsettings konsole spectacle breeze
+      - uses: actions/checkout@v4
+      - name: Lint, type-checking QML against Plasma's modules
+        run: ./scripts/lint.sh
+      - name: Smoke test in a headless Plasma session
+        run: |
+          useradd -m tester
+          chown -R tester "$GITHUB_WORKSPACE"
+          sudo -u tester env XDG_RUNTIME_DIR=/tmp ./scripts/smoke-test.sh "$GITHUB_WORKSPACE/smoke.png"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-screenshot
+          path: smoke.png
+          if-no-files-found: ignore

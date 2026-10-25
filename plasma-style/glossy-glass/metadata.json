@@ -1,0 +1,20 @@
+{
+    "KPackageStructure": "Plasma/Theme",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Anand Kumar Anbazhagan"
+            }
+        ],
+        "Category": "Plasma Theme",
+        "Description": "Breeze with dark frosted-glass panels; bottom panels hug their icons for use with Glossy Dock",
+        "EnabledByDefault": true,
+        "Id": "glossy-glass",
+        "License": "GPL-2.0-or-later",
+        "Name": "Glossy Glass",
+        "Version": "1.0.0",
+        "Website": "https://github.com/akanbaz/glossy-dock"
+    },
+    "X-Plasma-API": "5.0",
+    "FallbackTheme": "default"
+}

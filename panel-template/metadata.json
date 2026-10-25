@@ -1,0 +1,22 @@
+{
+    "KPackageStructure": "Plasma/LayoutTemplate",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Anand Kumar Anbazhagan"
+            }
+        ],
+        "Category": "",
+        "Description": "A centered, floating, auto-hiding dock panel with Glossy Dock",
+        "EnabledByDefault": true,
+        "Id": "io.github.akanbaz.glossydock.panel",
+        "License": "GPL-2.0-or-later",
+        "Name": "Glossy Dock",
+        "Version": "1.0.0",
+        "Website": "https://github.com/akanbaz/glossy-dock"
+    },
+    "X-Plasma-ContainmentCategories": [
+        "panel"
+    ],
+    "X-Plasma-Shell": "plasmashell"
+}

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0 http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+  <kcfgfile name=""/>
+  <group name="General">
+    <entry name="launchers" type="String">
+      <label>Pinned launchers, comma separated (applications:foo.desktop, preferred://browser, ...)</label>
+      <default>preferred://filemanager,preferred://browser,applications:org.kde.konsole.desktop,applications:systemsettings.desktop</default>
+    </entry>
+    <entry name="showOpenApps" type="Bool">
+      <label>Show apps that are open but not pinned after the pinned apps</label>
+      <default>true</default>
+    </entry>
+    <entry name="iconSize" type="Int">
+      <label>Icon size in pixels; 0 sizes icons to fit the panel</label>
+      <default>0</default>
+      <min>0</min>
+      <max>256</max>
+    </entry>
+    <entry name="iconSpacing" type="Int">
+      <label>Gap between icons in pixels</label>
+      <default>18</default>
+      <min>0</min>
+      <max>128</max>
+    </entry>
+    <entry name="zoomPercent" type="Int">
+      <label>How much the hovered icon grows, in percent; 0 turns magnification off</label>
+      <default>32</default>
+      <min>0</min>
+      <max>100</max>
+    </entry>
+    <entry name="showPreviews" type="Bool">
+      <label>Show window previews when hovering an open app</label>
+      <default>true</default>
+    </entry>
+    <entry name="peekWindows" type="Bool">
+      <label>Hide other windows while hovering a window preview</label>
+      <default>true</default>
+    </entry>
+    <entry name="showNameTooltips" type="Bool">
+      <label>Show the app name when hovering an app without previews</label>
+      <default>false</default>
+    </entry>
+    <entry name="dimMinimized" type="Bool">
+      <label>Dim the icons of minimized apps</label>
+      <default>false</default>
+    </entry>
+    <entry name="debugLog" type="Bool">
+      <label>Log which apps the dock shows (for troubleshooting and tests; no settings page)</label>
+      <default>false</default>
+    </entry>
+  </group>
+</kcfg>

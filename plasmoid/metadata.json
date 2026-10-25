@@ -1,0 +1,21 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Anand Kumar Anbazhagan"
+            }
+        ],
+        "BugReportUrl": "https://github.com/akanbaz/glossy-dock/issues",
+        "Category": "Windows and Tasks",
+        "Description": "A centered frosted-glass app dock with hover magnification, window previews and peek",
+        "EnabledByDefault": true,
+        "Icon": "preferences-system-windows",
+        "Id": "io.github.akanbaz.glossydock",
+        "License": "GPL-2.0-or-later",
+        "Name": "Glossy Dock",
+        "Version": "1.0.0",
+        "Website": "https://github.com/akanbaz/glossy-dock"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

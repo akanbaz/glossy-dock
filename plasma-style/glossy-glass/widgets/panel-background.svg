@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="760" viewBox="0 0 700 760">
+<rect id="hint-top-margin" x="600" y="20" width="1" height="16" fill="none"/>
+<rect id="hint-bottom-margin" x="610" y="20" width="1" height="16" fill="none"/>
+<rect id="hint-left-margin" x="600" y="50" width="16" height="1" fill="none"/>
+<rect id="hint-right-margin" x="600" y="60" width="16" height="1" fill="none"/>
+<rect id="hint-stretch-borders" x="600" y="70" width="1" height="1" fill="none"/>
+<path id="topleft" transform="translate(20,20)" d="M16,0 L16,16 L0,16 A16,16 0 0 1 16,0 Z" fill="#1c1c1e" fill-opacity="0.48"/>
+<path id="mask-topleft" transform="translate(20,180)" d="M16,0 L16,16 L0,16 A16,16 0 0 1 16,0 Z" fill="#ffffff"/>
+<path id="topright" transform="translate(80,20)" d="M0,0 L0,16 L16,16 A16,16 0 0 0 0,0 Z" fill="#1c1c1e" fill-opacity="0.48"/>
+<path id="mask-topright" transform="translate(80,180)" d="M0,0 L0,16 L16,16 A16,16 0 0 0 0,0 Z" fill="#ffffff"/>
+<path id="bottomleft" transform="translate(20,80)" d="M16,16 L16,0 L0,0 A16,16 0 0 0 16,16 Z" fill="#1c1c1e" fill-opacity="0.48"/>
+<path id="mask-bottomleft" transform="translate(20,240)" d="M16,16 L16,0 L0,0 A16,16 0 0 0 16,16 Z" fill="#ffffff"/>
+<path id="bottomright" transform="translate(80,80)" d="M16,0 L0,0 L0,16 A16,16 0 0 0 16,0 Z" fill="#1c1c1e" fill-opacity="0.48"/>
+<path id="mask-bottomright" transform="translate(80,240)" d="M16,0 L0,0 L0,16 A16,16 0 0 0 16,0 Z" fill="#ffffff"/>
+<rect id="top" x="160" y="20" width="24" height="16" fill="#1c1c1e" fill-opacity="0.48"/>
+<rect id="mask-top" x="160" y="180" width="24" height="16" fill="#ffffff"/>
+<rect id="bottom" x="160" y="80" width="24" height="16" fill="#1c1c1e" fill-opacity="0.48"/>
+<rect id="mask-bottom" x="160" y="240" width="24" height="16" fill="#ffffff"/>
+<rect id="left" x="220" y="20" width="16" height="20" fill="#1c1c1e" fill-opacity="0.48"/>
+<rect id="mask-left" x="220" y="180" width="16" height="20" fill="#ffffff"/>
+<rect id="right" x="260" y="20" width="16" height="20" fill="#1c1c1e" fill-opacity="0.48"/>
+<rect id="mask-right" x="260" y="180" width="16" height="20" fill="#ffffff"/>
+<rect id="center" x="320" y="20" width="24" height="20" fill="#1c1c1e" fill-opacity="0.48"/>
+<rect id="mask-center" x="320" y="180" width="24" height="20" fill="#ffffff"/>
+<rect id="thick-hint-top-margin" x="640" y="10" width="1" height="2" fill="none"/>
+<rect id="thick-hint-bottom-margin" x="650" y="10" width="1" height="2" fill="none"/>
+<rect id="thick-hint-left-margin" x="640" y="20" width="2" height="1" fill="none"/>
+<rect id="thick-hint-right-margin" x="640" y="30" width="2" height="1" fill="none"/>
+<rect id="thick-center" x="660" y="10" width="2" height="2" fill="none"/>
+<rect id="south-hint-top-margin" x="600" y="400" width="1" height="1" fill="none"/>
+<rect id="south-hint-bottom-margin" x="610" y="400" width="1" height="1" fill="none"/>
+<rect id="south-hint-left-margin" x="600" y="430" width="6" height="1" fill="none"/>
+<rect id="south-hint-right-margin" x="600" y="440" width="6" height="1" fill="none"/>
+<rect id="south-hint-stretch-borders" x="600" y="450" width="1" height="1" fill="none"/>
+<path id="south-topleft" transform="translate(20,400)" d="M16,0 L16,16 L0,16 A16,16 0 0 1 16,0 Z" fill="#1c1c1e" fill-opacity="0.48"/>
+<path id="mask-south-topleft" transform="translate(20,560)" d="M16,0 L16,16 L0,16 A16,16 0 0 1 16,0 Z" fill="#ffffff"/>
+<path id="south-topright" transform="translate(80,400)" d="M0,0 L0,16 L16,16 A16,16 0 0 0 0,0 Z" fill="#1c1c1e" fill-opacity="0.48"/>
+<path id="mask-south-topright" transform="translate(80,560)" d="M0,0 L0,16 L16,16 A16,16 0 0 0 0,0 Z" fill="#ffffff"/>
+<path id="south-bottomleft" transform="translate(20,460)" d="M16,16 L16,0 L0,0 A16,16 0 0 0 16,16 Z" fill="#1c1c1e" fill-opacity="0.48"/>
+<path id="mask-south-bottomleft" transform="translate(20,620)" d="M16,16 L16,0 L0,0 A16,16 0 0 0 16,16 Z" fill="#ffffff"/>
+<path id="south-bottomright" transform="translate(80,460)" d="M16,0 L0,0 L0,16 A16,16 0 0 0 16,0 Z" fill="#1c1c1e" fill-opacity="0.48"/>
+<path id="mask-south-bottomright" transform="translate(80,620)" d="M16,0 L0,0 L0,16 A16,16 0 0 0 16,0 Z" fill="#ffffff"/>
+<rect id="south-top" x="160" y="400" width="24" height="16" fill="#1c1c1e" fill-opacity="0.48"/>
+<rect id="mask-south-top" x="160" y="560" width="24" height="16" fill="#ffffff"/>
+<rect id="south-bottom" x="160" y="460" width="24" height="16" fill="#1c1c1e" fill-opacity="0.48"/>
+<rect id="mask-south-bottom" x="160" y="620" width="24" height="16" fill="#ffffff"/>
+<rect id="south-left" x="220" y="400" width="16" height="20" fill="#1c1c1e" fill-opacity="0.48"/>
+<rect id="mask-south-left" x="220" y="560" width="16" height="20" fill="#ffffff"/>
+<rect id="south-right" x="260" y="400" width="16" height="20" fill="#1c1c1e" fill-opacity="0.48"/>
+<rect id="mask-south-right" x="260" y="560" width="16" height="20" fill="#ffffff"/>
+<rect id="south-center" x="320" y="400" width="24" height="20" fill="#1c1c1e" fill-opacity="0.48"/>
+<rect id="mask-south-center" x="320" y="560" width="24" height="20" fill="#ffffff"/>
+</svg>
