@@ -62,7 +62,7 @@ PlasmoidItem {
     // spacer. Report that much less length and draw into it, so both rounded ends of
     // the panel get the same inset and the background hugs the icons.
     readonly property int trailingGap: inPanel ? Kirigami.Units.smallSpacing : 0
-    readonly property int reportedLength: Math.max(iconSize, dockLength - trailingGap)
+    readonly property int reportedLength: Math.max(1, dockLength - trailingGap)
 
     Layout.fillWidth: vertical
     Layout.fillHeight: !vertical

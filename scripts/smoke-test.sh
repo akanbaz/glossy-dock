@@ -155,6 +155,26 @@ for ((i = 0; i < 80; i++)); do
     sleep 0.5
 done
 sleep 1
+
+# Plasma's reported length can disagree with the panel window actually on screen, so also
+# ask KWin for the real width of the bottom dock's window.
+kwin_bottom_width() {
+    local js="$work/measure-$RANDOM.js" id
+    cat >"$js" <<'JS'
+var widths = [];
+workspace.windowList().forEach(function (w) {
+    var g = w.frameGeometry;
+    if (w.dock && g.width > g.height && g.y > 540) { widths.push(Math.round(g.width)); }
+});
+console.info("glossy-bottom-width: " + widths.join(","));
+JS
+    id=$("$qdbus_bin" org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript "$js" "measure$RANDOM")
+    "$qdbus_bin" org.kde.KWin "/Scripting/Script$id" org.kde.kwin.Script.run >/dev/null
+    sleep 0.5
+    "$qdbus_bin" org.kde.KWin "/Scripting/Script$id" org.kde.kwin.Script.stop >/dev/null 2>&1 || true
+    grep -oP 'glossy-bottom-width: \K[0-9,]*' "$work/kwin.log" | tail -1
+}
+bottom_before=$(kwin_bottom_width)
 echo "$report" | sed 's/^/    /'
 
 if [[ -n "$screenshot" ]] && command -v spectacle >/dev/null 2>&1; then
@@ -197,6 +217,30 @@ fi
 expect bottom $((2 * 29 + 18 + 20))
 expect left $((2 * 29 + 18 + 20))
 expect top $((2 * 24 + 18 + 20))
+
+# Unpinning an app must shrink the dock window by exactly one icon and one gap (29 + 18).
+echo "==> Unpinning an app from the bottom dock"
+shell "
+    panels().forEach(function (p) {
+        if (p.location !== 'bottom') { return; }
+        p.widgets('$WIDGET_ID').forEach(function (w) {
+            w.currentConfigGroup = ['General'];
+            w.writeConfig('launchers', 'applications:systemsettings.desktop');
+        });
+    });
+" >/dev/null
+bottom_after=""
+for ((i = 0; i < 40; i++)); do
+    sleep 0.5
+    bottom_after=$(kwin_bottom_width)
+    [[ -n "$bottom_after" && -n "$bottom_before" && "$bottom_after" =~ ^[0-9]+$ && "$bottom_before" =~ ^[0-9]+$ ]] \
+        && (( bottom_before - bottom_after == 47 )) && break
+done
+echo "    bottom dock window: ${bottom_before:-?} px -> ${bottom_after:-?} px"
+if ! [[ "$bottom_before" =~ ^[0-9]+$ && "$bottom_after" =~ ^[0-9]+$ ]] || (( bottom_before - bottom_after != 47 )); then
+    echo "FAIL: the bottom dock window should shrink by 47 px after unpinning one app"
+    failed=1
+fi
 
 # The settings page, loaded on its own: it must load cleanly and its pin logic must hold.
 qml_bin=""

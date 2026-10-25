@@ -32,7 +32,7 @@ jobs:
       - name: Install Plasma
         run: |
           pacman -Syu --noconfirm --needed git python sudo dbus mesa \
-            plasma-workspace kwin kpackage kpipewire plasma5support \
+            plasma-desktop plasma-workspace kwin kpackage kpipewire plasma5support \
             qt6-declarative qt6-tools systemsettings konsole spectacle breeze libcap
           # kwin_wayland ships with a file capability (CAP_SYS_NICE); containers refuse to
           # run such binaries for an unprivileged user, so drop it in this throwaway image.
