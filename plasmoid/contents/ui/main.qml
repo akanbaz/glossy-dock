@@ -59,9 +59,12 @@ PlasmoidItem {
     readonly property real neighbourScale: 1 + (hoverScale - 1) * 0.375
 
     // The panel puts one grid spacing between its last applet and a hidden trailing
-    // spacer. Report that much less length and draw into it, so both rounded ends of
-    // the panel get the same inset and the background hugs the icons.
-    readonly property int trailingGap: inPanel ? Kirigami.Units.smallSpacing : 0
+    // spacer. When the dock is the panel's only widget, report that much less length and
+    // draw into it, so both rounded ends get the same inset and the background hugs the
+    // icons. Next to other widgets that spacing separates the dock from them; leave it.
+    readonly property bool aloneInPanel: inPanel && !!Plasmoid.containment
+        && Plasmoid.containment.applets.length === 1
+    readonly property int trailingGap: aloneInPanel ? Kirigami.Units.smallSpacing : 0
     readonly property int reportedLength: Math.max(1, dockLength - trailingGap)
 
     Layout.fillWidth: vertical
@@ -209,10 +212,30 @@ PlasmoidItem {
         return String((role(tasksModel, row, TaskManager.AbstractTasksModel.WinIdList) || [])[0] || "")
     }
 
+    // Slots and window rows shift whenever an app opens or closes, so anything that acts
+    // later (menu items, previews) remembers a stable key and looks the position up then.
+    function slotIndex(key) {
+        return key ? slots.findIndex(s => s.key === key) : -1
+    }
+
+    function windowRow(id) {
+        if (!id) {
+            return -1
+        }
+        for (let r = 0; r < tasksModel.count; r++) {
+            if (windowId(r) === id) {
+                return r
+            }
+        }
+        return -1
+    }
+
     // Per slot: launcher row, icon, name, app id, and the window rows with their state.
     // Installed pins come first in their fixed order; unpinned open apps follow, one each.
     readonly property var slots: {
-        tick
+        if (tick < 0) { // never true; makes the list rebuild whenever tick changes
+            return []
+        }
         const A = TaskManager.AbstractTasksModel
         const out = []
         for (let i = 0; i < pins.length; i++) {
@@ -220,7 +243,7 @@ PlasmoidItem {
             if (!pm || !pm.available || (pm.appId && out.some(s => s.appId === pm.appId))) {
                 continue
             }
-            out.push({ pinIndex: i, pinned: true, launcher: pm.launcher, icon: pm.icon, name: pm.name,
+            out.push({ key: pm.appId, pinIndex: i, pinned: true, launcher: pm.launcher, icon: pm.icon, name: pm.name,
                        appId: pm.appId, url: pm.url || pins[i], windows: [], active: -1, visible: -1, minimized: -1 })
         }
         for (let r = 0; r < tasksModel.count; r++) {
@@ -233,10 +256,10 @@ PlasmoidItem {
                 if (!showOpenApps) {
                     continue
                 }
-                out.push({ pinIndex: -1, pinned: false, launcher: -1,
+                out.push({ key: appId || ("window:" + windowId(r)), pinIndex: -1, pinned: false, launcher: -1,
                            icon: role(tasksModel, r, Qt.DecorationRole) || "",
                            name: String(role(tasksModel, r, A.AppName) || role(tasksModel, r, Qt.DisplayRole) || ""),
-                           appId: appId || ("window:" + r),
+                           appId: appId || ("window:" + windowId(r)),
                            url: plainUrl(role(tasksModel, r, A.LauncherUrlWithoutIcon)),
                            windows: [], active: -1, visible: -1, minimized: -1 })
                 pos = out.length - 1
@@ -264,6 +287,7 @@ PlasmoidItem {
         }
     }
     onSlotsChanged: logSlots()
+    onSlotCountChanged: hoverIndex = -1
     onDebugLogChanged: logSlots()
 
     // ---------------------------------------------------------------- actions
@@ -376,7 +400,13 @@ PlasmoidItem {
             }
             list.push(s.url)
         } else if (s.pinIndex >= 0) {
-            list.splice(s.pinIndex, 1)
+            // Also drop other entries for the same app (e.g. "Browser" and the browser's own
+            // launcher), which the dock shows only once.
+            const keep = pins.filter((pin, k) => {
+                const pm = pinModels.objectAt(k)
+                return k !== s.pinIndex && !(pm && pm.appId && pm.appId === s.appId)
+            })
+            list.splice(0, list.length, ...keep)
         }
         Plasmoid.configuration.launchers = list.join(",")
     }
@@ -413,10 +443,10 @@ PlasmoidItem {
         function onListed(url, actions) {
             root.actionCache[url] = actions
             const p = root.pendingMenu
-            if (p && (root.slots[p.index] || {}).url === url) {
+            if (p && p.url === url) {
                 root.pendingMenu = null
                 pendingMenuTimer.stop()
-                root.showMenu(p.index, p.parent)
+                root.showMenu(root.slotIndex(p.key), p.parent)
             }
         }
     }
@@ -445,17 +475,23 @@ PlasmoidItem {
             const p = root.pendingMenu
             root.pendingMenu = null
             if (p) {
-                root.showMenu(p.index, p.parent)
+                root.showMenu(root.slotIndex(p.key), p.parent)
             }
         }
     }
 
     // ---------------------------------------------------------------- window previews
 
-    property int previewIndex: -1
-    property bool previewShown: false
+    // Which app the preview popup belongs to, and how many slots currently show it (the
+    // shared popup can briefly be "shown" by two slots while moving between icons).
+    property string previewKey: ""
+    property int previewsShowing: 0
+    readonly property bool previewShown: previewsShowing > 0
+    readonly property int previewIndex: tick >= 0 ? slotIndex(previewKey) : -1
     readonly property var previewWindows: {
-        tick
+        if (tick < 0) { // never true; recompute whenever tick changes
+            return []
+        }
         const A = TaskManager.AbstractTasksModel
         const s = slots[previewIndex]
         if (!s) {
@@ -483,6 +519,8 @@ PlasmoidItem {
     property Item previewPanel: WindowPreviews {
         dock: root
     }
+
+    Component.onDestruction: highlight([])
 
     // ---------------------------------------------------------------- the dock
 
@@ -530,13 +568,25 @@ PlasmoidItem {
             active: !menu.visible && (usePreview || (root.showNames && st.name.length > 0))
             mainItem: usePreview ? root.previewPanel : null
             mainText: usePreview ? "" : st.name
-            onAboutToShow: root.previewIndex = index
+            property bool showingPreview: false
+            onAboutToShow: {
+                if (usePreview) {
+                    root.previewKey = st.key
+                }
+            }
             onToolTipVisibleChanged: toolTipVisible => {
-                if (usePreview && root.previewIndex === index) {
-                    root.previewShown = toolTipVisible
+                const now = toolTipVisible && usePreview
+                if (now !== showingPreview) {
+                    showingPreview = now
+                    root.previewsShowing += now ? 1 : -1
                 }
                 if (!toolTipVisible) {
                     root.highlight([])
+                }
+            }
+            Component.onDestruction: {
+                if (showingPreview) {
+                    root.previewsShowing -= 1
                 }
             }
 
@@ -618,7 +668,7 @@ PlasmoidItem {
             return
         }
         if (s.url && actionRunner.item && actionCache[s.url] === undefined) {
-            pendingMenu = { index: i, parent: parent }
+            pendingMenu = { key: s.key, url: s.url, parent: parent }
             requestActions(s.url)
             pendingMenuTimer.restart()
             return
@@ -635,13 +685,28 @@ PlasmoidItem {
         const isOpen = s.windows.length > 0
         const rep = s.active >= 0 ? s.active : s.visible >= 0 ? s.visible : s.minimized
         const url = s.url
+        const key = s.key
+        const repId = rep >= 0 ? windowId(rep) : ""
         const entries = []
         const item = (text, icon, run) => entries.push({ text: text, icon: icon || "", run: run, separator: false })
         const separator = () => entries.push({ text: "", icon: "", run: null, separator: true })
+        // Menu items run later; find the app and window again then, by key and window id.
+        const forSlot = action => () => {
+            const j = root.slotIndex(key)
+            if (j >= 0) {
+                action(j)
+            }
+        }
+        const forWindow = action => () => {
+            const r = root.windowRow(repId)
+            if (r >= 0) {
+                action(tasksModel.index(r, 0))
+            }
+        }
 
-        item(i18n("Open"), "", () => root.open(i))
+        item(i18n("Open"), "", forSlot(j => root.open(j)))
         if (s.pinned || isOpen) {
-            item(i18n("New window"), "window-new", () => root.newWindow(i))
+            item(i18n("New window"), "window-new", forSlot(j => root.newWindow(j)))
         }
 
         const actions = actionCache[url] || []
@@ -656,15 +721,10 @@ PlasmoidItem {
             separator()
             const minimized = role(tasksModel, rep, A.IsMinimized) === true
             const maximized = role(tasksModel, rep, A.IsMaximized) === true
-            item(minimized ? i18n("Restore") : i18n("Minimize"), minimized ? "window-restore" : "window-minimize", () => {
-                if (minimized) {
-                    tasksModel.requestActivate(tasksModel.index(rep, 0))
-                } else {
-                    tasksModel.requestToggleMinimized(tasksModel.index(rep, 0))
-                }
-            })
+            item(minimized ? i18n("Restore") : i18n("Minimize"), minimized ? "window-restore" : "window-minimize",
+                 forWindow(idx => minimized ? tasksModel.requestActivate(idx) : tasksModel.requestToggleMinimized(idx)))
             item(maximized ? i18n("Restore size") : i18n("Maximize"), maximized ? "window-restore" : "window-maximize",
-                 () => tasksModel.requestToggleMaximized(tasksModel.index(rep, 0)))
+                 forWindow(idx => tasksModel.requestToggleMaximized(idx)))
             if (s.windows.length > 1 && kwin.item) {
                 const ids = s.windows.map(r => windowId(r)).filter(id => id.length > 0)
                 item(i18n("Show all windows"), "window", () => root.windowView(ids))
@@ -674,16 +734,16 @@ PlasmoidItem {
         if (s.pinned || url) {
             separator()
             if (s.pinned) {
-                item(i18n("Unpin from Dock"), "window-unpin", () => root.setPinned(i, false))
+                item(i18n("Unpin from Dock"), "window-unpin", forSlot(j => root.setPinned(j, false)))
             } else {
-                item(i18n("Pin to Dock"), "window-pin", () => root.setPinned(i, true))
+                item(i18n("Pin to Dock"), "window-pin", forSlot(j => root.setPinned(j, true)))
             }
         }
 
         if (isOpen) {
             separator()
             item(s.windows.length > 1 ? i18n("Close all %1 windows", s.windows.length) : i18n("Close"),
-                 "window-close", () => root.closeAll(i))
+                 "window-close", forSlot(j => root.closeAll(j)))
         }
 
         menu.popup(parent, entries)

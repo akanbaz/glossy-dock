@@ -13,4 +13,10 @@ First public release.
 - Optional features (thumbnails, peek, app actions) load separately and switch off cleanly
   when their system component is missing.
 - Glossy Glass Plasma style and a "Glossy Dock" panel template.
-- install.sh / uninstall.sh, lint, isolated Plasma smoke test, reproducible release builds.
+- Right-click menu items, previews and app actions follow the app (and window) they were
+  opened for, even if apps open or close while the menu is up.
+- Panels stay free to auto-hide after moving between previews and name tooltips.
+- The 4px end-gap compensation only applies when the dock is alone in its panel.
+- Unpinning removes every pin entry for that app.
+- install.sh / uninstall.sh, lint, isolated Plasma smoke test that measures the real dock
+  windows through apps opening/closing and pin changes, reproducible release builds.

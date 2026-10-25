@@ -108,8 +108,10 @@ so without `--restart` the new version takes effect at your next login.
 
 ```bash
 scripts/lint.sh        # metadata, config schema, shell, QML syntax and type checks
-scripts/smoke-test.sh  # boots a throwaway Plasma (virtual KWin, temporary HOME) and adds
-                       # docks on three edges; fails on any error from the dock
+scripts/smoke-test.sh  # boots a throwaway Plasma (virtual KWin, temporary HOME): install,
+                       # --add-dock, panel template, docks on three edges, apps opening and
+                       # closing, pin changes, settings page, uninstall; checks real window
+                       # sizes through KWin and fails on any error from the dock
 scripts/build.sh       # release files in dist/
 tools/gen-panel-svg.py # regenerate the Glossy Glass SVGs after changing the generator
 ```

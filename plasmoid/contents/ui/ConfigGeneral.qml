@@ -95,14 +95,26 @@ KCMUtils.SimpleKCM {
                         filterByScreen: true
                         screenGeometry: Qt.rect(-100000, -100000, 1, 1)
                     }
+                    // Plasma fills in a launcher's details after the row appears, so re-read
+                    // them whenever the model changes, not just when the row is created.
+                    property int revision: 0
+                    Connections {
+                        target: resolver
+                        function onDataChanged() { pinRow.revision++ }
+                        function onRowsInserted() { pinRow.revision++ }
+                        function onRowsRemoved() { pinRow.revision++ }
+                        function onModelReset() { pinRow.revision++ }
+                    }
+                    function field(role) {
+                        return pinRow.revision >= 0 && resolver.count > 0 ? resolver.data(resolver.index(0, 0), role) : undefined
+                    }
                     // A missing .desktop file still gets a placeholder row, but without an app id.
-                    readonly property bool installed: resolver.count > 0
-                        && String(resolver.data(resolver.index(0, 0), TaskManager.AbstractTasksModel.AppId) || "").length > 0
+                    readonly property bool installed: String(field(TaskManager.AbstractTasksModel.AppId) || "").length > 0
 
                     Kirigami.Icon {
                         Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
                         Layout.preferredHeight: Kirigami.Units.iconSizes.smallMedium
-                        source: pinRow.installed ? resolver.data(resolver.index(0, 0), Qt.DecorationRole) : "dialog-warning"
+                        source: pinRow.installed ? pinRow.field(Qt.DecorationRole) : "dialog-warning"
                     }
 
                     QQC2.Label {
@@ -110,7 +122,7 @@ KCMUtils.SimpleKCM {
                         Layout.minimumWidth: Kirigami.Units.gridUnit * 10
                         elide: Text.ElideRight
                         text: pinRow.installed
-                            ? String(resolver.data(resolver.index(0, 0), Qt.DisplayRole) || page.prettyLauncher(pinRow.modelData))
+                            ? String(pinRow.field(Qt.DisplayRole) || page.prettyLauncher(pinRow.modelData))
                             : i18n("%1 (not installed, hidden)", page.prettyLauncher(pinRow.modelData))
                         opacity: pinRow.installed ? 1 : 0.6
                     }
