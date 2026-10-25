@@ -33,7 +33,10 @@ jobs:
         run: |
           pacman -Syu --noconfirm --needed git python sudo dbus mesa \
             plasma-workspace kwin kpackage kpipewire plasma5support \
-            qt6-declarative qt6-tools systemsettings konsole spectacle breeze
+            qt6-declarative qt6-tools systemsettings konsole spectacle breeze libcap
+          # kwin_wayland ships with a file capability (CAP_SYS_NICE); containers refuse to
+          # run such binaries for an unprivileged user, so drop it in this throwaway image.
+          setcap -r /usr/bin/kwin_wayland
       - uses: actions/checkout@v4
       - name: Lint, type-checking QML against Plasma's modules
         run: ./scripts/lint.sh
