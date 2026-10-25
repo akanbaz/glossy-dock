@@ -214,6 +214,12 @@ require_kwin() {
 # ------------------------------------------------------------------- session
 
 step "Starting a virtual KWin"
+# Without a GPU render device (CI containers) KWin has no renderer and quits as soon as a
+# window needs compositing; use its CPU-only QPainter renderer there instead.
+if ! compgen -G "/dev/dri/renderD*" >/dev/null; then
+    echo "    no GPU render device; using KWin's software renderer"
+    export KWIN_COMPOSE=Q
+fi
 kwin_wayland --virtual --no-lockscreen --no-global-shortcuts --socket "$WAYLAND_DISPLAY" \
     --width 1920 --height 1080 >"$work/kwin.log" 2>&1 &
 kwin_pid=$!
