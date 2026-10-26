@@ -255,12 +255,14 @@ require_kwin() {
 
 step "Starting a virtual KWin"
 # KWin's off-screen backend needs a GPU render device. Without one (e.g. GitHub's CI
-# containers) panels still work, but KWin quits as soon as an app window has to be drawn
-# (6.8 has no CPU renderer for this backend, and Xvfb lacks the DRI3 that nesting needs),
-# so the steps that open app windows are skipped there.
+# containers) KWin can't draw: panels get their first layout on screen, but later changes
+# never reach it (Plasma waits for frames that never come), and KWin quits as soon as an
+# app window has to be drawn. (6.8 has no CPU renderer for this backend, and Xvfb lacks the
+# DRI3 that nesting needs.) So the steps that change docks after start-up or open app
+# windows are skipped there.
 has_gpu=1
 compgen -G "/dev/dri/renderD*" >/dev/null || has_gpu=0
-[[ $has_gpu -eq 1 ]] || echo "    no GPU render device: steps that open app windows will be skipped"
+[[ $has_gpu -eq 1 ]] || echo "    no GPU render device: steps that change docks after start-up or open app windows will be skipped"
 kwin_wayland --virtual --no-lockscreen --no-global-shortcuts --socket "$WAYLAND_DISPLAY" \
     --width 1920 --height 1080 >"$work/kwin.log" 2>&1 &
 kwin_pid=$!
@@ -371,6 +373,9 @@ rt=$(grep -oP 'top=\K[0-9]+' <<<"$reported" || echo 0)
 # request crashes the compositor, so CI doesn't ask for one.)
 # ------------------------------------------------------------------- 5. height and names
 
+if [[ $has_gpu -eq 0 ]]; then
+    echo "skip: dock height and app names (changes after start-up don't reach the screen without a GPU)"
+else
 step "Dock height and app names"
 top_thick=$(dock_thickness top)
 top_len=$(dock_len top)
@@ -392,6 +397,7 @@ else
     fail "left (vertical) dock should grow by the same amount for each of its 2 icons: $left_len -> $left_with"
 fi
 wait_apps "$left_id" "System Settings | Konsole"
+fi # has_gpu
 
 if [[ -n "$screenshot" ]] && command -v spectacle >/dev/null 2>&1; then
     spectacle -b -n -f -o "$screenshot" >/dev/null 2>&1 && echo "    screenshot: $screenshot"
