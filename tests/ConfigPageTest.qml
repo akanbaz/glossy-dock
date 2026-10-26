@@ -64,6 +64,18 @@ Item {
             page.cfg_iconSize = 0
             harness.expect("icon size 0 means automatic", page.cfg_iconSize, 0)
 
+            // App names: one choice drives two settings.
+            page.setNameMode(2)
+            harness.expect("names always: labels on", page.cfg_showLabels, true)
+            harness.expect("names always: hover off", page.cfg_showNameTooltips, false)
+            harness.expect("names always: mode", page.nameMode, 2)
+            page.setNameMode(1)
+            harness.expect("names on hover: labels off", page.cfg_showLabels, false)
+            harness.expect("names on hover: hover on", page.cfg_showNameTooltips, true)
+            harness.expect("names on hover: mode", page.nameMode, 1)
+            page.setNameMode(0)
+            harness.expect("names off", [page.cfg_showLabels, page.cfg_showNameTooltips, page.nameMode].join(), "false,false,0")
+
             if (harness.failures === 0) {
                 console.log("PASS: settings page")
             }

@@ -5,8 +5,10 @@
 
 Writes panel-background.svg for the plain, translucent, solid and opaque variants of the
 Plasma style. Every panel gets a dark frosted fill with 16px rounded corners and no rim,
-gloss or shadow. Panels on the bottom edge ("south" prefix) get a much smaller side margin
-so a dock's glass hugs its icons: 6px here plus the panel's own 4px spacing = 10px.
+gloss or shadow. Panels on every edge ("south", "north", "west", "east" prefixes) get a
+small margin along their length so a dock's glass hugs its icons at any panel height: 6px
+here plus the panel's own 4px spacing = 10px. (Without a prefixed frame Plasma would use the
+16px default, capped by the panel's height, so the ends would grow on taller panels.)
 
 Usage: tools/gen-panel-svg.py [plasma-style-dir]   (default: plasma-style/glossy-glass)
 """
@@ -59,7 +61,7 @@ def frame(prefix, opacity, y0, margins):
 def svg(opacity):
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
-        '<svg xmlns="http://www.w3.org/2000/svg" width="700" height="760" viewBox="0 0 700 760">',
+        '<svg xmlns="http://www.w3.org/2000/svg" width="700" height="1940" viewBox="0 0 700 1940">',
     ]
     lines += frame("", opacity, 20, (16, 16, 16, 16))
     # Thick panels: small fixed margins.
@@ -70,8 +72,13 @@ def svg(opacity):
         '<rect id="thick-hint-right-margin" x="640" y="30" width="2" height="1" fill="none"/>',
         '<rect id="thick-center" x="660" y="10" width="2" height="2" fill="none"/>',
     ]
-    # Bottom-edge panels (docks): the glass hugs the icons.
-    lines += frame("south", opacity, 400, (6, 6, 1, 1))
+    # Panels on each edge: the glass hugs the icons. Margins are (left, right, top, bottom);
+    # vertical panels run along the y axis, so their small margin is top/bottom.
+    y = 400
+    for prefix, margins in (("south", (6, 6, 1, 1)), ("north", (6, 6, 1, 1)),
+                            ("west", (1, 1, 6, 6)), ("east", (1, 1, 6, 6))):
+        lines += frame(prefix, opacity, y, margins)
+        y += 380
     lines.append("</svg>")
     return "\n".join(lines) + "\n"
 

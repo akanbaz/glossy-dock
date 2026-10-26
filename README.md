@@ -13,7 +13,9 @@ together or separately:
 
 - **One fixed slot per pinned app.** Opening an app never adds, duplicates or shifts a pinned icon.
 - **Open apps that aren't pinned** get a slot after the pins (can be turned off).
-- **Hover magnification.** The hovered icon grows, its neighbours a little; the bar never resizes.
+- **Hover magnification.** The hovered icon grows, its neighbours a little (both adjustable);
+  the bar never resizes.
+- **App names** off, on hover, or always shown under the icons.
 - **Window state at a glance.** A short line under an open app, a longer bright one for the
   focused app, a faint one for a minimized app.
 - **Clicks that do what you mean.** Click to launch, raise, minimize (if focused) or restore;
@@ -23,7 +25,8 @@ together or separately:
 - **A right-click menu** with the app's own actions (e.g. *New Incognito Window*), minimize,
   maximize, *Show all windows*, *Pin to Dock* / *Unpin from Dock*, and close.
 - **Works on any edge**: bottom, top, left or right; icons size themselves to the panel.
-- **Settings page** for pins (reorder, remove, add), icon size, gap, magnification and behaviour.
+- **Settings page** for pins (reorder, remove, add), icon size, dock height, gap,
+  magnification, app names and behaviour.
 
 ## Requirements
 
@@ -73,8 +76,12 @@ Everything installs into `~/.local/share/plasma` for your user only; no root nee
 
 - **Add a dock**: right-click the desktop → *Add Panel* → *Glossy Dock*.
 - **The glass look**: System Settings → *Colors & Themes* → *Plasma Style* → *Glossy Glass*.
-  The dock works with any Plasma style; Glossy Glass is what gives it the frosted look and the
-  tight ends.
+  The dock works with any Plasma style; Glossy Glass is what gives it the frosted look and
+  ends that stay tight at any dock height. Its text and indicators are always light, since
+  the glass is always dark.
+- **Size**: *Icon size* (fit the panel, or fixed), *Dock height* (sets the panel's
+  thickness) and *Gap between icons* in the dock's settings. With app names under the
+  icons, a dock height of 56 px or more leaves room for both.
 - **Pin an app**: open it, right-click its icon in the dock → *Pin to Dock*. Or add it by
   desktop-file name in the settings (e.g. `org.kde.dolphin`).
 - **Settings**: right-click the dock → *Configure Glossy Dock…*

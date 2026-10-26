@@ -14,8 +14,10 @@
 #   4. opening a pinned app adds nothing; opening an unpinned app adds one slot; closing
 #      it, unpinning an open app and closing that app each change the width by exactly
 #      one icon and one gap
-#   5. the settings page loads and its pin logic holds
-#   6. uninstall.sh --remove-docks removes the dock panels and the packages
+#   5. the dock height setting resizes the panel; names under the icons lengthen a
+#      vertical dock by the same amount per icon and leave a horizontal dock's length alone
+#   6. the settings page loads and its pin and name logic holds
+#   7. uninstall.sh --remove-docks removes the dock panels and the packages
 #
 # Any error or warning that Plasma logs from the dock fails the test.
 #
@@ -150,6 +152,44 @@ dock_windows() {
 }
 dock_len() { grep -oP "(^| )$1=\\K[0-9]+" <<<"$(dock_windows)" || echo 0; }
 
+# Real on-screen thickness of the dock window on an edge.
+dock_thickness() {
+    kwin_eval "
+        var t = 0;
+        workspace.windowList().forEach(function (w) {
+            if (!w.dock) { return; }
+            var g = w.frameGeometry, edge;
+            if (g.width > g.height) { edge = g.y > 540 ? 'bottom' : 'top'; } else { edge = g.x < 960 ? 'left' : 'right'; }
+            if (edge === '$1') { t = Math.round(g.width > g.height ? g.height : g.width); }
+        });
+        return t;"
+}
+
+# Change one setting of the dock on an edge.
+set_dock() {
+    shell "
+        panels().forEach(function (p) {
+            if (p.location !== '$1') { return; }
+            p.widgets('$WIDGET_ID').forEach(function (w) {
+                w.currentConfigGroup = ['General'];
+                w.writeConfig('$2', $3);
+            });
+        });
+    " >/dev/null
+}
+
+wait_value() {
+    local what=$1 want=$2 got=""
+    shift 2
+    for ((i = 0; i < 60; i++)); do
+        got=$("$@")
+        [[ "$got" == "$want" ]] && { echo "    $what: $got"; return 0; }
+        sleep 0.25
+    done
+    fail "$what: got $got, expected $want"
+    return 0
+}
+
 # Panels as Plasma sees them: "edge:docks" per panel.
 panel_summary() {
     shell "
@@ -226,8 +266,10 @@ kwin_wayland --virtual --no-lockscreen --no-global-shortcuts --socket "$WAYLAND_
 kwin_pid=$!
 wait_for "KWin" 60 test -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" || { cat "$work/kwin.log"; exit 1; }
 
-step "Installing packages into the temporary home"
-"$ROOT/install.sh" >"$work/install.log" 2>&1 || { cat "$work/install.log"; exit 1; }
+step "Installing packages into the temporary home, with the Glossy Glass style"
+"$ROOT/install.sh" --apply-style >"$work/install.log" 2>&1 || { cat "$work/install.log"; exit 1; }
+style=$(kreadconfig6 --file plasmarc --group Theme --key name 2>/dev/null || true)
+[[ "$style" == "glossy-glass" ]] || fail "install.sh --apply-style didn't select Glossy Glass (Plasma style is '$style')"
 
 # A fresh HOME has no application cache yet; until it's built, apps can't be looked up.
 kbuildsycoca6 --noincremental >"$work/sycoca.log" 2>&1 || true
@@ -317,6 +359,30 @@ rt=$(grep -oP 'top=\K[0-9]+' <<<"$reported" || echo 0)
 
 # Optional, for looking at by eye. (On GitHub's software-rendered KWin the screenshot
 # request crashes the compositor, so CI doesn't ask for one.)
+# ------------------------------------------------------------------- 5. height and names
+
+step "Dock height and app names"
+top_thick=$(dock_thickness top)
+top_len=$(dock_len top)
+set_dock top dockHeight 60
+wait_value "top dock thickness after setting the height to 60 (was $top_thick)" $((top_thick + 18)) dock_thickness top
+# With Glossy Glass the ends keep the same small inset at any height.
+wait_value "top dock length after the height change (unchanged)" "$top_len" dock_len top
+
+left_len=$(dock_len left)
+set_dock top showLabels true
+set_dock left showLabels true
+sleep 2
+wait_value "top dock length with names (horizontal: unchanged)" "$top_len" dock_len top
+left_with=$(dock_len left)
+grown=$((left_with - left_len))
+if (( grown > 0 && grown % 2 == 0 )); then
+    echo "    left dock length with names: $left_len -> $left_with px (+$((grown / 2)) per icon)"
+else
+    fail "left (vertical) dock should grow by the same amount for each of its 2 icons: $left_len -> $left_with"
+fi
+wait_apps "$left_id" "System Settings | Konsole"
+
 if [[ -n "$screenshot" ]] && command -v spectacle >/dev/null 2>&1; then
     spectacle -b -n -f -o "$screenshot" >/dev/null 2>&1 && echo "    screenshot: $screenshot"
 fi
@@ -366,7 +432,7 @@ kill "$konsole_pid" 2>/dev/null || true
 wait_apps "$bottom_id" "System Settings"
 wait_bottom $((base - pitch)) "that app closed, slot removed"
 
-# ------------------------------------------------------------------- 5. settings page
+# ------------------------------------------------------------------- 6. settings page
 
 step "Settings page"
 if timeout 30 "$qml_bin" "$ROOT/tests/ConfigPageTest.qml" >"$work/config.log" 2>&1 \
@@ -379,7 +445,7 @@ else
 fi
 fi # has_gpu
 
-# ------------------------------------------------------------------- 6. uninstall.sh
+# ------------------------------------------------------------------- 7. uninstall.sh
 
 # Removing the widget makes Plasma log about it vanishing; judge errors up to this point.
 log_lines_before_uninstall=$(wc -l <"$work/plasma.log")

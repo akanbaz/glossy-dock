@@ -30,6 +30,18 @@
       <min>0</min>
       <max>100</max>
     </entry>
+    <entry name="neighbourZoomPercent" type="Int">
+      <label>How much the icons next to the hovered one grow, in percent</label>
+      <default>12</default>
+      <min>0</min>
+      <max>100</max>
+    </entry>
+    <entry name="dockHeight" type="Int">
+      <label>Thickness of the dock's panel in pixels; 0 leaves it as set in Plasma</label>
+      <default>0</default>
+      <min>0</min>
+      <max>256</max>
+    </entry>
     <entry name="showPreviews" type="Bool">
       <label>Show window previews when hovering an open app</label>
       <default>true</default>
@@ -40,6 +52,10 @@
     </entry>
     <entry name="showNameTooltips" type="Bool">
       <label>Show the app name when hovering an app without previews</label>
+      <default>false</default>
+    </entry>
+    <entry name="showLabels" type="Bool">
+      <label>Always show app names under the icons</label>
       <default>false</default>
     </entry>
     <entry name="dimMinimized" type="Bool">

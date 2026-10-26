@@ -19,11 +19,21 @@ KCMUtils.SimpleKCM {
     property alias cfg_showOpenApps: showOpenApps.checked
     property alias cfg_showPreviews: showPreviews.checked
     property alias cfg_peekWindows: peekWindows.checked
-    property alias cfg_showNameTooltips: showNames.checked
+    property bool cfg_showNameTooltips
+    property bool cfg_showLabels
     property alias cfg_dimMinimized: dimMinimized.checked
     property int cfg_iconSize
+    property int cfg_dockHeight
     property alias cfg_iconSpacing: spacing.value
     property alias cfg_zoomPercent: zoom.value
+    property alias cfg_neighbourZoomPercent: neighbourZoom.value
+
+    // App names: 0 = off, 1 = on hover (tooltip), 2 = always, under the icons.
+    readonly property int nameMode: cfg_showLabels ? 2 : cfg_showNameTooltips ? 1 : 0
+    function setNameMode(mode) {
+        cfg_showLabels = mode === 2
+        cfg_showNameTooltips = mode === 1
+    }
 
     readonly property var pinList: cfg_launchers.split(",").map(s => s.trim()).filter(s => s.length > 0)
 
@@ -209,6 +219,33 @@ KCMUtils.SimpleKCM {
             valueFromText: (text, locale) => parseInt(text)
         }
 
+        QQC2.CheckBox {
+            id: fixedHeight
+            Kirigami.FormData.label: i18n("Dock height:")
+            text: i18n("Set the panel height")
+            checked: page.cfg_dockHeight > 0
+            onToggled: page.cfg_dockHeight = checked ? dockHeight.value : 0
+        }
+
+        QQC2.SpinBox {
+            id: dockHeight
+            enabled: fixedHeight.checked
+            from: 24
+            to: 256
+            value: page.cfg_dockHeight > 0 ? page.cfg_dockHeight : 42
+            onValueModified: page.cfg_dockHeight = value
+            textFromValue: (v, locale) => i18n("%1 px", v)
+            valueFromText: (text, locale) => parseInt(text)
+        }
+
+        QQC2.Label {
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
+            font: Kirigami.Theme.smallFont
+            opacity: 0.7
+            text: i18n("Applied when you change it. Plasma's own panel settings can still change the height afterwards.")
+        }
+
         QQC2.SpinBox {
             id: spacing
             Kirigami.FormData.label: i18n("Gap between icons:")
@@ -226,6 +263,57 @@ KCMUtils.SimpleKCM {
             stepSize: 4
             textFromValue: (v, locale) => v === 0 ? i18n("Off") : i18n("%1 %", v)
             valueFromText: (text, locale) => parseInt(text) || 0
+        }
+
+        QQC2.SpinBox {
+            id: neighbourZoom
+            Kirigami.FormData.label: i18n("Next icons grow:")
+            enabled: zoom.value > 0
+            from: 0
+            to: 100
+            stepSize: 4
+            textFromValue: (v, locale) => v === 0 ? i18n("Not at all") : i18n("%1 %", v)
+            valueFromText: (text, locale) => parseInt(text) || 0
+        }
+
+        QQC2.Label {
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
+            font: Kirigami.Theme.smallFont
+            opacity: 0.7
+            text: i18n("Icons never grow taller than the panel, so large values need a taller dock.")
+        }
+
+        Item {
+            Kirigami.FormData.isSection: true
+        }
+
+        QQC2.RadioButton {
+            Kirigami.FormData.label: i18n("App names:")
+            text: i18n("Off")
+            checked: page.nameMode === 0
+            onToggled: if (checked) page.setNameMode(0)
+        }
+
+        QQC2.RadioButton {
+            text: i18n("On hover, for apps without a preview")
+            checked: page.nameMode === 1
+            onToggled: if (checked) page.setNameMode(1)
+        }
+
+        QQC2.RadioButton {
+            text: i18n("Always, under the icons")
+            checked: page.nameMode === 2
+            onToggled: if (checked) page.setNameMode(2)
+        }
+
+        QQC2.Label {
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
+            font: Kirigami.Theme.smallFont
+            opacity: 0.7
+            visible: page.nameMode === 2
+            text: i18n("Names take room from the icons; a dock height of 56 px or more works well.")
         }
 
         Item {
@@ -247,11 +335,6 @@ KCMUtils.SimpleKCM {
             id: peekWindows
             enabled: showPreviews.checked
             text: i18n("Hide other windows while hovering a preview")
-        }
-
-        QQC2.CheckBox {
-            id: showNames
-            text: i18n("Show the app name on hover when there's no preview")
         }
 
         QQC2.CheckBox {

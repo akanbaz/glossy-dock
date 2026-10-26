@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Settings: dock height (sets the panel's thickness), separate magnification for the icons
+  next to the hovered one, and app names off / on hover / always under the icons.
+- Glossy Glass: tight ends on every edge at any panel height (they used to grow on taller
+  top, left and right panels), and fixed dark-glass colours so text and indicators stay
+  readable with a light colour scheme.
+
 ## 1.0.0
 
 First public release.

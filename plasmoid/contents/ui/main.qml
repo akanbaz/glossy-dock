@@ -10,6 +10,7 @@ import QtQml
 import QtQuick.Layouts
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
+import org.kde.plasma.components as PlasmaComponents3
 import org.kde.kirigami as Kirigami
 import org.kde.taskmanager as TaskManager
 
@@ -32,6 +33,7 @@ PlasmoidItem {
     readonly property bool showPreviews: Plasmoid.configuration.showPreviews
     readonly property bool peekWindows: Plasmoid.configuration.peekWindows
     readonly property bool showNames: Plasmoid.configuration.showNameTooltips
+    readonly property bool showLabels: Plasmoid.configuration.showLabels
     readonly property bool dimMinimized: Plasmoid.configuration.dimMinimized
 
     // ---------------------------------------------------------------- geometry
@@ -40,23 +42,51 @@ PlasmoidItem {
     readonly property bool inPanel: vertical || Plasmoid.formFactor === PlasmaCore.Types.Horizontal
     // Size across the dock: the panel's thickness.
     readonly property real thickness: vertical ? width : height
+
+    // App names under the icons. On a horizontal dock they share the panel's thickness
+    // with the icon; on a vertical dock they make each slot longer instead.
+    TextMetrics {
+        id: labelMetrics
+        font: Kirigami.Theme.smallFont
+        text: "Hg"
+    }
+    readonly property int labelGap: 1
+    readonly property int labelBlock: showLabels ? Math.ceil(labelMetrics.height) + labelGap : 0
+    readonly property int crossLabel: vertical ? 0 : labelBlock
+
     readonly property int iconSize: {
-        const fit = Math.max(16, Math.floor(thickness) - 2)
+        const fit = Math.max(16, Math.floor(thickness) - crossLabel - 2)
         if (Plasmoid.configuration.iconSize > 0) {
             return inPanel ? Math.min(Plasmoid.configuration.iconSize, fit) : Plasmoid.configuration.iconSize
         }
-        return inPanel ? Math.max(16, Math.round(thickness * 0.69)) : Kirigami.Units.iconSizes.large
+        if (!inPanel) {
+            return Kirigami.Units.iconSizes.large
+        }
+        return Math.max(16, Math.round((thickness - crossLabel) * (crossLabel > 0 ? 0.78 : 0.69)))
     }
+    // Where the icon starts across the dock: icon and name centered together.
+    readonly property int iconCrossStart: Math.floor((thickness - iconSize - crossLabel) / 2)
     readonly property int gap: Math.max(0, Plasmoid.configuration.iconSpacing)
-    readonly property int pitch: iconSize + gap
+    // Length of one slot along the dock (icon, plus its name on a vertical dock).
+    readonly property int itemLength: iconSize + (vertical ? labelBlock : 0)
+    readonly property int pitch: itemLength + gap
     readonly property int slotCount: slots.length
-    // Length along the dock: icons plus the gaps between them, nothing else.
-    readonly property int dockLength: slotCount > 0 ? slotCount * iconSize + (slotCount - 1) * gap : iconSize
+    // Length along the dock: slots plus the gaps between them, nothing else.
+    readonly property int dockLength: slotCount > 0 ? slotCount * itemLength + (slotCount - 1) * gap : itemLength
 
-    // Hover magnification, capped so a grown icon never pokes out of the panel.
-    readonly property real hoverScale: Math.max(1, Math.min(1 + Plasmoid.configuration.zoomPercent / 100,
-                                                            inPanel ? (thickness - 2) / iconSize : 2))
-    readonly property real neighbourScale: 1 + (hoverScale - 1) * 0.375
+    // Hover magnification, capped so a grown icon never pokes out of the panel. With names
+    // shown under the icons, icons grow upward from their bottom edge instead of the middle.
+    readonly property real zoomCap: {
+        if (!inPanel) {
+            return 2
+        }
+        if (crossLabel > 0) {
+            return (iconCrossStart + iconSize - 1) / iconSize
+        }
+        return (thickness - 2) / iconSize
+    }
+    readonly property real hoverScale: Math.max(1, Math.min(1 + Plasmoid.configuration.zoomPercent / 100, zoomCap))
+    readonly property real neighbourScale: Math.max(1, Math.min(1 + Plasmoid.configuration.neighbourZoomPercent / 100, hoverScale))
 
     // The panel puts one grid spacing between its last applet and a hidden trailing
     // spacer. When the dock is the panel's only widget, report that much less length and
@@ -417,7 +447,16 @@ PlasmoidItem {
 
     Loader {
         id: kwin
-        source: "KWinBridge.qml"
+        source: "DBusBridge.qml"
+    }
+
+    // "Dock height" setting: resize this dock's panel when the setting changes (not at
+    // start-up, so a height changed later in Plasma's own panel editor is left alone).
+    readonly property int dockHeight: Plasmoid.configuration.dockHeight
+    onDockHeightChanged: {
+        if (dockHeight > 0 && inPanel && kwin.item) {
+            kwin.item.setPanelThickness(Plasmoid.id, dockHeight)
+        }
     }
 
     // Window peek: KWin hides every other window while a preview is hovered.
@@ -550,7 +589,7 @@ PlasmoidItem {
             readonly property bool isMinimized: isOpen && st.active < 0 && st.visible < 0
             readonly property bool usePreview: isOpen && root.showPreviews
             readonly property real slotStart: index === 0 ? 0 : index * root.pitch - root.gap / 2
-            readonly property real slotEnd: index === root.slotCount - 1 ? root.dockLength : index * root.pitch + root.iconSize + root.gap / 2
+            readonly property real slotEnd: index === root.slotCount - 1 ? root.dockLength : index * root.pitch + root.itemLength + root.gap / 2
             property alias iconItem: icon
 
             x: root.vertical ? 0 : slotStart
@@ -565,7 +604,7 @@ PlasmoidItem {
             location: Plasmoid.location
             interactive: usePreview
             timeout: usePreview ? -1 : 4000
-            active: !menu.visible && (usePreview || (root.showNames && st.name.length > 0))
+            active: !menu.visible && (usePreview || (root.showNames && !root.showLabels && st.name.length > 0))
             mainItem: usePreview ? root.previewPanel : null
             mainText: usePreview ? "" : st.name
             property bool showingPreview: false
@@ -597,16 +636,32 @@ PlasmoidItem {
                 id: icon
                 readonly property real along: cell.index * root.pitch - cell.slotStart
                 x: root.vertical ? Math.round((parent.width - width) / 2) : along
-                y: root.vertical ? along : Math.round((parent.height - height) / 2)
+                y: root.vertical ? along : root.iconCrossStart
                 width: root.iconSize
                 height: root.iconSize
                 source: cell.st.icon
                 animated: false
                 opacity: root.dimMinimized && cell.isMinimized ? 0.5 : 1
+                transformOrigin: root.showLabels ? Item.Bottom : Item.Center
                 scale: root.scaleFor(cell.index)
                 Behavior on scale {
                     NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
                 }
+            }
+
+            PlasmaComponents3.Label {
+                visible: root.showLabels
+                width: root.vertical ? parent.width - 4 : root.pitch - 2
+                x: root.vertical ? 2 : Math.round(icon.x + (root.iconSize - width) / 2)
+                y: icon.y + root.iconSize + root.labelGap
+                height: root.labelBlock - root.labelGap
+                text: cell.st.name
+                font: Kirigami.Theme.smallFont
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                elide: Text.ElideRight
+                maximumLineCount: 1
+                opacity: root.dimMinimized && cell.isMinimized ? 0.5 : 0.9
             }
 
             // Open indicator, on the side of the icon that faces the screen edge:
@@ -622,7 +677,9 @@ PlasmoidItem {
                     : Math.round(icon.x + (root.iconSize - width) / 2)
                 y: root.vertical
                     ? Math.round(icon.y + (root.iconSize - height) / 2)
-                    : (edge === PlasmaCore.Types.TopEdge ? icon.y - 4 : icon.y + root.iconSize + 2)
+                    : (edge === PlasmaCore.Types.TopEdge
+                        ? Math.max(0, icon.y - 4)
+                        : Math.min(parent.height - 2, icon.y + root.iconSize + root.crossLabel + 2))
                 radius: 1
                 color: Kirigami.Theme.textColor
                 opacity: cell.isActive ? 1 : cell.isMinimized ? 0.35 : 0.6

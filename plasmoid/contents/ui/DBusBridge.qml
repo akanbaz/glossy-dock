@@ -3,8 +3,9 @@
     SPDX-License-Identifier: GPL-2.0-or-later
 */
 
-// KWin D-Bus calls, in their own file so a system without the Plasma D-Bus QML module
-// only loses peek and "Show all windows" instead of the whole dock.
+// D-Bus calls to KWin and Plasma, in their own file so a system without the Plasma D-Bus
+// QML module only loses peek, "Show all windows" and the dock height setting instead of
+// the whole dock.
 
 import QtQuick
 import org.kde.plasma.workspace.dbus as DBus
@@ -19,6 +20,24 @@ Item {
             member: "highlightWindows",
             arguments: [ids.map(id => String(id))],
             signature: "(as)"
+        })
+    }
+
+    // Set the thickness of the panel that holds this applet, through Plasma's scripting API
+    // (a widget can't resize its own panel).
+    function setPanelThickness(appletId, px) {
+        const id = Math.round(Number(appletId))
+        const size = Math.round(Number(px))
+        if (!(id > 0) || !(size > 0)) {
+            return
+        }
+        DBus.SessionBus.asyncCall({
+            service: "org.kde.plasmashell",
+            path: "/PlasmaShell",
+            iface: "org.kde.PlasmaShell",
+            member: "evaluateScript",
+            arguments: ["panels().forEach(function (p) { if (p.widgetIds.indexOf(" + id + ") >= 0) { p.height = " + size + "; } });"],
+            signature: "(s)"
         })
     }
 
