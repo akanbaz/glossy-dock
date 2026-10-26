@@ -72,11 +72,13 @@ def svg(opacity):
         '<rect id="thick-hint-right-margin" x="640" y="30" width="2" height="1" fill="none"/>',
         '<rect id="thick-center" x="660" y="10" width="2" height="2" fill="none"/>',
     ]
-    # Panels on each edge: the glass hugs the icons. Margins are (left, right, top, bottom);
-    # vertical panels run along the y axis, so their small margin is top/bottom.
+    # Panels on each edge: the glass hugs the icons. Margins are (left, right, top, bottom).
+    # Only the margin along the panel shrinks; across it stays at the default 16, so other
+    # widgets (clocks, launchers) on Glossy Glass panels keep their size. (The dock fills the
+    # panel's whole thickness regardless.) Vertical panels run along the y axis.
     y = 400
-    for prefix, margins in (("south", (6, 6, 1, 1)), ("north", (6, 6, 1, 1)),
-                            ("west", (1, 1, 6, 6)), ("east", (1, 1, 6, 6))):
+    for prefix, margins in (("south", (6, 6, 16, 16)), ("north", (6, 6, 16, 16)),
+                            ("west", (16, 16, 6, 6)), ("east", (16, 16, 6, 6))):
         lines += frame(prefix, opacity, y, margins)
         y += 380
     lines.append("</svg>")

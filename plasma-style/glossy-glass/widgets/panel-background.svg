@@ -28,8 +28,8 @@
 <rect id="thick-hint-left-margin" x="640" y="20" width="2" height="1" fill="none"/>
 <rect id="thick-hint-right-margin" x="640" y="30" width="2" height="1" fill="none"/>
 <rect id="thick-center" x="660" y="10" width="2" height="2" fill="none"/>
-<rect id="south-hint-top-margin" x="600" y="400" width="1" height="1" fill="none"/>
-<rect id="south-hint-bottom-margin" x="610" y="400" width="1" height="1" fill="none"/>
+<rect id="south-hint-top-margin" x="600" y="400" width="1" height="16" fill="none"/>
+<rect id="south-hint-bottom-margin" x="610" y="400" width="1" height="16" fill="none"/>
 <rect id="south-hint-left-margin" x="600" y="430" width="6" height="1" fill="none"/>
 <rect id="south-hint-right-margin" x="600" y="440" width="6" height="1" fill="none"/>
 <rect id="south-hint-stretch-borders" x="600" y="450" width="1" height="1" fill="none"/>
@@ -51,8 +51,8 @@
 <rect id="mask-south-right" x="260" y="560" width="16" height="20" fill="#ffffff"/>
 <rect id="south-center" x="320" y="400" width="24" height="20" fill="#1c1c1e" fill-opacity="0.48"/>
 <rect id="mask-south-center" x="320" y="560" width="24" height="20" fill="#ffffff"/>
-<rect id="north-hint-top-margin" x="600" y="780" width="1" height="1" fill="none"/>
-<rect id="north-hint-bottom-margin" x="610" y="780" width="1" height="1" fill="none"/>
+<rect id="north-hint-top-margin" x="600" y="780" width="1" height="16" fill="none"/>
+<rect id="north-hint-bottom-margin" x="610" y="780" width="1" height="16" fill="none"/>
 <rect id="north-hint-left-margin" x="600" y="810" width="6" height="1" fill="none"/>
 <rect id="north-hint-right-margin" x="600" y="820" width="6" height="1" fill="none"/>
 <rect id="north-hint-stretch-borders" x="600" y="830" width="1" height="1" fill="none"/>
@@ -76,8 +76,8 @@
 <rect id="mask-north-center" x="320" y="940" width="24" height="20" fill="#ffffff"/>
 <rect id="west-hint-top-margin" x="600" y="1160" width="1" height="6" fill="none"/>
 <rect id="west-hint-bottom-margin" x="610" y="1160" width="1" height="6" fill="none"/>
-<rect id="west-hint-left-margin" x="600" y="1190" width="1" height="1" fill="none"/>
-<rect id="west-hint-right-margin" x="600" y="1200" width="1" height="1" fill="none"/>
+<rect id="west-hint-left-margin" x="600" y="1190" width="16" height="1" fill="none"/>
+<rect id="west-hint-right-margin" x="600" y="1200" width="16" height="1" fill="none"/>
 <rect id="west-hint-stretch-borders" x="600" y="1210" width="1" height="1" fill="none"/>
 <path id="west-topleft" transform="translate(20,1160)" d="M16,0 L16,16 L0,16 A16,16 0 0 1 16,0 Z" fill="#1c1c1e" fill-opacity="0.48"/>
 <path id="mask-west-topleft" transform="translate(20,1320)" d="M16,0 L16,16 L0,16 A16,16 0 0 1 16,0 Z" fill="#ffffff"/>
@@ -99,8 +99,8 @@
 <rect id="mask-west-center" x="320" y="1320" width="24" height="20" fill="#ffffff"/>
 <rect id="east-hint-top-margin" x="600" y="1540" width="1" height="6" fill="none"/>
 <rect id="east-hint-bottom-margin" x="610" y="1540" width="1" height="6" fill="none"/>
-<rect id="east-hint-left-margin" x="600" y="1570" width="1" height="1" fill="none"/>
-<rect id="east-hint-right-margin" x="600" y="1580" width="1" height="1" fill="none"/>
+<rect id="east-hint-left-margin" x="600" y="1570" width="16" height="1" fill="none"/>
+<rect id="east-hint-right-margin" x="600" y="1580" width="16" height="1" fill="none"/>
 <rect id="east-hint-stretch-borders" x="600" y="1590" width="1" height="1" fill="none"/>
 <path id="east-topleft" transform="translate(20,1540)" d="M16,0 L16,16 L0,16 A16,16 0 0 1 16,0 Z" fill="#1c1c1e" fill-opacity="0.48"/>
 <path id="mask-east-topleft" transform="translate(20,1700)" d="M16,0 L16,16 L0,16 A16,16 0 0 1 16,0 Z" fill="#ffffff"/>
