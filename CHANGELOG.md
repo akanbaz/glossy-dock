@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Fixed: settings-page controls stopped following their setting once clicked, so "Defaults"
+  or another dock's shared change could be overwritten on Apply.
+- Fixed: preview cards could act on the wrong window if windows opened or closed meanwhile.
+- Fixed: app actions were missing for launchers in folders with spaces or non-ASCII names,
+  and the helper now works with any POSIX `sh` (e.g. dash).
+- A clear warning is logged when an optional feature's module is missing.
 - Hover zoom stays sharp: icons are rendered at their zoomed size and scaled down at rest,
   instead of being stretched (and blurred) when hovered.
 - "Use these settings on all docks" (on by default): changing size, spacing,

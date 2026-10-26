@@ -116,6 +116,26 @@ designed, not because they were missing.
 
 ---
 
+## 7. Sweep against these principles
+
+After writing sections 1-6, the whole code base, scripts and tests were swept against each
+principle. Findings:
+
+| Principle | Finding | Fix | Guardrail |
+|---|---|---|---|
+| Stable identity | Preview cards acted on window *rows* | Act by window id | — (click-only path) |
+| Test transitions | Settings-page controls stopped following their setting once clicked: "Defaults", or another dock sharing a change while the window was open, left them stale, and *Apply* wrote the stale value back to every dock | Re-bind each control after it acts | Settings test clicks each control, changes the setting from outside, and checks the control follows; fails without the fix |
+| Assumed platform behaviour | App actions never appeared for launchers in folders with spaces or non-ASCII names (percent-encoded `file://` URLs weren't decoded) | Decode in portable `awk` (`printf`'s `\x` isn't POSIX; Debian/Ubuntu's `dash` lacks it) | Lint builds a launcher in `My Apps é/` and lists its actions with plain `sh` (dash in CI) |
+| Assumed platform behaviour | Optional features (D-Bus, app actions) failed silently when their module was missing | Named warning in the log | Smoke test fails on any dock warning |
+| Assumed platform behaviour | Nothing proved the dock notices widgets joining its panel, or that *Configure* / *Edit Panel* exist | — (both worked) | Smoke test adds and removes a widget beside a dock and checks the dock's layout log; checks the actions are present |
+| Measure reality | The right-click menu (broken twice before) and previews had never been measured | — | A test-only hook opens them; KWin measures that each sits on the glass over its icon. Planting the old sizing bug reproduces the 500x500 menu and fails |
+| Test transitions | Not covered: two screens, a dock moved to another edge, *Show open apps* and *Even out icon sizes* toggled at runtime | — (all worked) | Smoke test now runs with 2 screens and covers each; each check failed with a planted bug |
+| Shared resources | Glossy Glass's dark colours also make Plasma's own popups dark (like Breeze Dark) | Documented in the README | — |
+
+The only bug the new checks found in the dock itself was in its own debug log (drawn sizes
+weren't re-logged when *Even out icon sizes* changed). Every other check passed first time and
+failed when its bug was planted, which is the point: these are now guarded.
+
 ## Principles going forward
 
 1. **Stable identity:** anything that acts later stores ids, not positions.
@@ -129,8 +149,10 @@ designed, not because they were missing.
 
 ## Not yet covered
 
-- Hover, clicks and the right-click menu can't be driven automatically (the isolated session
-  has no input injection), so the menu and preview fixes in section 1 rely on code review
-  and manual testing.
+- Clicks can't be driven automatically (the isolated session has no input injection). A
+  test-only hook opens the menu and previews so their placement is measured, but choosing a
+  menu item or clicking a preview card still relies on code review and manual testing.
+- Icon measurements and app actions are cached until Plasma restarts, so an icon theme
+  change or an app update that changes its actions shows after the next login.
 - GitHub's runners have no GPU, so steps after start-up only run in local smoke tests.
 - Plasma versions before 6.8 and X11 sessions haven't been tested.

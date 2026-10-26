@@ -70,6 +70,10 @@
       <label>Dim the icons of minimized apps</label>
       <default>false</default>
     </entry>
+    <entry name="debugAction" type="String">
+      <label>Test hook, only with debugLog on: "menu:N", "preview:N", "hover:N" or "close", optionally followed by "#anything" to repeat an action</label>
+      <default></default>
+    </entry>
     <entry name="debugLog" type="Bool">
       <label>Log which apps the dock shows (for troubleshooting and tests; no settings page)</label>
       <default>false</default>

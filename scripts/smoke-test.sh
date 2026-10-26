@@ -7,7 +7,8 @@
 # settings. Everything is checked against what is really on screen (window geometry from
 # KWin), and through changes after start-up, not just the first layout:
 #
-#   1. install.sh --add-dock adds one dock, and running it again adds no second one
+#   1. on two screens, install.sh --add-dock adds one dock per screen, and running it again
+#      adds no more
 #   2. the "Glossy Dock" panel template adds a dock, then another on a free edge
 #   3. docks on the bottom, left and top edges show exactly the installed pins (a pin
 #      whose app doesn't exist is skipped) and their windows agree with each other
@@ -18,7 +19,11 @@
 #      vertical dock by the same amount per icon and leave a horizontal dock's length alone
 #   6. the settings page loads and its pin and name logic holds
 #   7. with "use these settings on all docks", a dock's settings reach the others, while
-#      each dock keeps its own pins
+#      each dock keeps its own pins; the dock notices widgets joining its panel; Configure,
+#      Edit Panel and the optional features are available
+#   (GPU only) the right-click menu and window preview open attached to the dock (measured),
+#   "Show open apps" adds and removes slots, "Even out icon sizes" changes drawn sizes, and
+#   a dock moved to another edge keeps its length
 #   8. uninstall.sh --remove-docks removes the dock panels and the packages
 #
 # Any error or warning that Plasma logs from the dock fails the test.
@@ -192,6 +197,68 @@ wait_value() {
     return 0
 }
 
+# Geometry "x y w h" of the bottom dock window on the first screen.
+bottom_geom() {
+    kwin_eval '
+        var r = "";
+        workspace.windowList().forEach(function (w) {
+            var g = w.frameGeometry;
+            if (w.dock && g.width > g.height && g.y > 540 && g.x < 1920) { r = [g.x, g.y, g.width, g.height].map(Math.round).join(" "); }
+        });
+        return r;'
+}
+
+# Plasma's own popups (menu, tooltip): "x y w h" of the first one found.
+plasma_popup() {
+    kwin_eval '
+        var r = "";
+        workspace.windowList().forEach(function (w) {
+            if (w.dock || w.desktop || r) { return; }
+            if (w.resourceClass === "org.kde.plasmashell" || w.resourceClass === "plasmashell") {
+                var g = w.frameGeometry;
+                if (g.width < 1900) { r = [g.x, g.y, g.width, g.height].map(Math.round).join(" "); }
+            }
+        });
+        return r;'
+}
+
+# Ask a dock to open its menu / preview, set hover, or close popups (debugLog test hook).
+debug_action() { set_dock "$1" debugAction "'$2#$RANDOM'"; }
+
+# A dock's latest layout or drawn-size log line.
+dock_layout() { grep -oP "glossydock-layout: $1 \\K.*" "$work/plasma.log" | tail -1 || true; }
+dock_drawn() { grep -oP "glossydock-drawn: $1 \\K.*" "$work/plasma.log" | tail -1 || true; }
+
+wait_log() {
+    local what=$1 want=$2
+    shift 2
+    for ((i = 0; i < 60; i++)); do
+        [[ "$("$@")" == *"$want"* ]] && { echo "    $what"; return 0; }
+        sleep 0.25
+    done
+    fail "$what: log shows [$("$@")], expected it to contain [$want]"
+    return 0
+}
+
+# A popup is attached when its bottom edge is within 12px above the dock's glass (the dock
+# window starts 8px above the glass: the floating margin) and it spans slot $3's centre.
+check_attached() {
+    local what=$1 popup=$2 slot=$3 px py pw ph bx by bw bh
+    read -r px py pw ph <<<"$popup"
+    read -r bx by bw bh <<<"$(bottom_geom)"
+    if [[ -z "$px" || -z "$bx" ]]; then
+        fail "$what: no popup window found"
+        return 0
+    fi
+    local glass=$((by + 8)) bottom=$((py + ph)) centre=$((bx + 8 + 10 + slot * 47 + 14))
+    if (( bottom <= glass + 2 && bottom >= glass - 12 && px <= centre && centre <= px + pw && ph < 500 && pw < 450 )); then
+        echo "    $what: ${pw}x${ph}, bottom edge $((glass - bottom)) px above the glass, over icon $((slot + 1))"
+    else
+        fail "$what: popup at [$popup] isn't attached over icon $((slot + 1)) of the dock at [$bx $by $bw $bh]"
+    fi
+    return 0
+}
+
 # Panels as Plasma sees them: "edge:docks" per panel.
 panel_summary() {
     shell "
@@ -266,7 +333,7 @@ has_gpu=1
 compgen -G "/dev/dri/renderD*" >/dev/null || has_gpu=0
 [[ $has_gpu -eq 1 ]] || echo "    no GPU render device: steps that change docks after start-up or open app windows will be skipped"
 kwin_wayland --virtual --no-lockscreen --no-global-shortcuts --socket "$WAYLAND_DISPLAY" \
-    --width 1920 --height 1080 >"$work/kwin.log" 2>&1 &
+    --width 1920 --height 1080 --output-count 2 >"$work/kwin.log" 2>&1 &
 kwin_pid=$!
 wait_for "KWin" 60 test -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" || { cat "$work/kwin.log"; exit 1; }
 
@@ -302,17 +369,17 @@ shell "panels().forEach(function (p) { p.remove(); });" >/dev/null
 "$ROOT/install.sh" --add-dock >>"$work/add-dock.log" 2>&1 || fail "install.sh --add-dock (second run)"
 sleep 2
 got=$(panel_summary)
-if [[ "$got" == "bottom:1" ]]; then
-    echo "    one dock on the bottom, not added twice"
+if [[ "$got" == "bottom:1 bottom:1" ]]; then
+    echo "    one dock on the bottom of each of the 2 screens, not added twice"
 else
-    fail "after --add-dock twice, panels are [$got], expected [bottom:1]"
+    fail "after --add-dock twice on 2 screens, panels are [$got], expected [bottom:1 bottom:1]"
 fi
 
 # ------------------------------------------------------------------- 2. panel template
 
 step "Add Panel > Glossy Dock template"
 shell "panels().forEach(function (p) { p.remove(); });" >/dev/null
-shell "loadTemplate('$TEMPLATE_ID'); loadTemplate('$TEMPLATE_ID');" >/dev/null
+shell "loadTemplate('$TEMPLATE_ID'); loadTemplate('$TEMPLATE_ID'); panels().forEach(function (p) { p.screen = 0; });" >/dev/null
 sleep 2
 got=$(panel_summary)
 if [[ "$got" == "bottom:1 left:1" ]]; then
@@ -328,6 +395,7 @@ shell "
     panels().forEach(function (p) { p.remove(); });
     ['bottom', 'left', 'top'].forEach(function (edge) {
         var panel = new Panel;
+        panel.screen = 0;
         panel.location = edge;
         panel.height = 42;
         panel.floating = true;
@@ -433,6 +501,22 @@ require_kwin "after opening the test window"
 wait_for "the test window" 40 has_window "Glossy Dock test window" || fail "test window didn't open"
 wait_bottom $((base + pitch)) "unpinned app opened, one slot added"
 
+set_dock bottom showOpenApps false
+wait_bottom "$base" "Show open apps off: slot removed"
+set_dock bottom showOpenApps true
+wait_bottom $((base + pitch)) "Show open apps on: slot back"
+
+debug_action bottom "menu:0"
+sleep 1.5
+check_attached "right-click menu" "$(plasma_popup)" 0
+debug_action bottom close
+sleep 1
+debug_action bottom "preview:1"
+sleep 2
+check_attached "window preview of Konsole" "$(plasma_popup)" 1
+debug_action bottom close
+sleep 1
+
 kill "$testwin_pid" 2>/dev/null || true
 wait_bottom "$base" "unpinned app closed, slot removed"
 
@@ -451,6 +535,12 @@ wait_bottom "$base" "open app unpinned, it stays as an open app"
 kill "$konsole_pid" 2>/dev/null || true
 wait_apps "$bottom_id" "System Settings"
 wait_bottom $((base - pitch)) "that app closed, slot removed"
+
+one_icon=$(dock_len bottom)
+shell "panels().forEach(function (p) { if (p.location === 'bottom') { p.location = 'right'; } });" >/dev/null
+wait_value "dock moved to the right edge: same length" "$one_icon" dock_len right
+shell "panels().forEach(function (p) { if (p.location === 'right') { p.location = 'bottom'; } });" >/dev/null
+wait_value "and back to the bottom: same length" "$one_icon" dock_len bottom
 
 # ------------------------------------------------------------------- even icon sizes
 
@@ -473,6 +563,12 @@ settings=$(fill_of systemsettings)
 echo "    measured artwork fill: padded test app ${padded:-?}, System Settings ${settings:-?}"
 awk -v p="${padded:-0}" 'BEGIN { exit !(p > 0.70 && p < 0.80) }' || fail "padded test app should measure about 0.75, got ${padded:-nothing}"
 awk -v s="${settings:-0}" 'BEGIN { exit !(s > 0.85) }' || fail "System Settings should measure close to full, got ${settings:-nothing}"
+# 24px icons: the padded app is drawn at 24 x 1.3 (the cap) = 31px; 24px with the option off.
+wait_log "padded test app drawn at 31 px" "Padded Test App=31" dock_drawn "$top_id"
+set_dock top evenIconSizes false
+wait_log "with Even out icon sizes off: 24 px" "Padded Test App=24" dock_drawn "$top_id"
+set_dock top evenIconSizes true
+wait_log "and back on: 31 px" "Padded Test App=31" dock_drawn "$top_id"
 
 # ------------------------------------------------------------------- 6. settings page
 
@@ -490,6 +586,13 @@ fi # has_gpu
 # ------------------------------------------------------------------- 8. uninstall.sh
 
 # ------------------------------------------------------------------- 7. shared settings
+
+step "Layout reactions"
+wait_log "Configure, Edit Panel, D-Bus and app actions are available" "configure=true editPanel=true dbus=true actions=true" dock_layout "$top_id"
+shell "panels().forEach(function (p) { if (p.location === 'top') { p.addWidget('org.kde.plasma.panelspacer'); } });" >/dev/null
+wait_log "a widget added next to the dock turns the end-gap compensation off" "alone=false" dock_layout "$top_id"
+shell "panels().forEach(function (p) { if (p.location === 'top') { p.widgets('org.kde.plasma.panelspacer').forEach(function (w) { w.remove(); }); } });" >/dev/null
+wait_log "and removing it turns it back on" "alone=true" dock_layout "$top_id"
 
 step "Shared settings across docks"
 read_setting() {
@@ -534,7 +637,8 @@ done
 # ------------------------------------------------------------------- errors
 
 # Any QML error or warning from the dock's files fails the test.
-if head -n "$log_lines_before_uninstall" "$work/plasma.log" | grep -nE "$WIDGET_ID|glossydock" | grep -v "glossydock-slots:" \
+if head -n "$log_lines_before_uninstall" "$work/plasma.log" | grep -nE "$WIDGET_ID|glossydock|Glossy Dock:" \
+    | grep -vE "glossydock-(slots|fit|layout|drawn|debug):" \
     | grep -iE "error|warning|TypeError|ReferenceError|cannot|failed|not installed|undefined" >"$work/errors.txt"; then
     fail "Plasma reported problems with the dock:"
     sed 's/^/    /' "$work/errors.txt" | head -20

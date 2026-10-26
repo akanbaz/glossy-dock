@@ -37,7 +37,24 @@ find_desktop_file() {
 
 case "$url" in
 applications:*) path=$(find_desktop_file "${url#applications:}") || exit 0 ;;
-file://*) path=${url#file://} ;;
+file://*)
+    # file:// URLs are percent-encoded ("My%20Apps"); decode them byte by byte. (Plain awk
+    # in the C locale: printf's \x escapes aren't POSIX and dash lacks them.)
+    path=$(printf '%s\n' "${url#file://}" | LC_ALL=C awk '{
+        out = ""; hex = "0123456789abcdef"
+        for (i = 1; i <= length($0); i++) {
+            c = substr($0, i, 1)
+            h = tolower(substr($0, i + 1, 2))
+            if (c == "%" && index(hex, substr(h, 1, 1)) && index(hex, substr(h, 2, 1))) {
+                out = out sprintf("%c", (index(hex, substr(h, 1, 1)) - 1) * 16 + index(hex, substr(h, 2, 1)) - 1)
+                i += 2
+            } else {
+                out = out c
+            }
+        }
+        printf "%s", out
+    }')
+    ;;
 *) path=$url ;;
 esac
 

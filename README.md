@@ -80,7 +80,7 @@ Everything installs into `~/.local/share/plasma` for your user only; no root nee
 - **The glass look**: System Settings → *Colors & Themes* → *Plasma Style* → *Glossy Glass*.
   The dock works with any Plasma style; Glossy Glass is what gives it the frosted look and
   ends that stay tight at any dock height. Its text and indicators are always light, since
-  the glass is always dark.
+  the glass is always dark; like Breeze Dark, it also makes Plasma's own popups dark.
 - **Size**: *Icon size* (fit the panel, or fixed), *Dock height* (sets the panel's
   thickness) and *Gap between icons* in the dock's settings. With app names under the
   icons, a dock height of 56 px or more leaves room for both.

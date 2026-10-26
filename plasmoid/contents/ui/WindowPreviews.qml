@@ -65,10 +65,10 @@ Item {
                 onExited: previews.dock.highlight([])
                 onClicked: mouse => {
                     if (mouse.button === Qt.MiddleButton) {
-                        previews.dock.closeWindowRow(card.modelData.row)
+                        previews.dock.closeWindowById(card.modelData.uuid)
                         return
                     }
-                    previews.dock.activateWindowRow(card.modelData.row)
+                    previews.dock.activateWindowById(card.modelData.uuid)
                     previews.dock.closePreview()
                 }
             }
@@ -94,7 +94,7 @@ Item {
                         icon.name: "window-close"
                         display: PlasmaComponents3.AbstractButton.IconOnly
                         text: i18n("Close")
-                        onClicked: previews.dock.closeWindowRow(card.modelData.row)
+                        onClicked: previews.dock.closeWindowById(card.modelData.uuid)
                     }
                 }
 

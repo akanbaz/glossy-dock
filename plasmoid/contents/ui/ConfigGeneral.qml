@@ -37,6 +37,15 @@ KCMUtils.SimpleKCM {
         cfg_showNameTooltips = mode === 1
     }
 
+    // Clicking a control overwrites its `checked`/`value` binding, after which it would stop
+    // following the setting (e.g. "Defaults", or another dock sharing a new value while this
+    // window is open, and Apply would then write the stale value back). Each handler below
+    // re-binds its control after acting.
+
+    // For tests: the controls whose bindings must survive interaction.
+    readonly property var controls: ({ autoIconSize: autoIconSize, iconSize: iconSize, fixedHeight: fixedHeight,
+        dockHeight: dockHeight, namesOff: namesOff, namesHover: namesHover, namesAlways: namesAlways })
+
     readonly property var pinList: cfg_launchers.split(",").map(s => s.trim()).filter(s => s.length > 0)
 
     function setPins(list) {
@@ -225,7 +234,10 @@ KCMUtils.SimpleKCM {
             Kirigami.FormData.label: i18n("Icon size:")
             text: i18n("Fit the panel")
             checked: page.cfg_iconSize === 0
-            onToggled: page.cfg_iconSize = checked ? 0 : iconSize.value
+            onToggled: {
+                page.cfg_iconSize = checked ? 0 : iconSize.value
+                checked = Qt.binding(() => page.cfg_iconSize === 0)
+            }
         }
 
         QQC2.SpinBox {
@@ -234,7 +246,10 @@ KCMUtils.SimpleKCM {
             from: 16
             to: 256
             value: page.cfg_iconSize > 0 ? page.cfg_iconSize : 32
-            onValueModified: page.cfg_iconSize = value
+            onValueModified: {
+                page.cfg_iconSize = value
+                value = Qt.binding(() => page.cfg_iconSize > 0 ? page.cfg_iconSize : 32)
+            }
             textFromValue: (v, locale) => i18n("%1 px", v)
             valueFromText: (text, locale) => parseInt(text)
         }
@@ -257,7 +272,10 @@ KCMUtils.SimpleKCM {
             Kirigami.FormData.label: i18n("Dock height:")
             text: i18n("Set the panel height")
             checked: page.cfg_dockHeight > 0
-            onToggled: page.cfg_dockHeight = checked ? dockHeight.value : 0
+            onToggled: {
+                page.cfg_dockHeight = checked ? dockHeight.value : 0
+                checked = Qt.binding(() => page.cfg_dockHeight > 0)
+            }
         }
 
         QQC2.SpinBox {
@@ -266,7 +284,10 @@ KCMUtils.SimpleKCM {
             from: 24
             to: 256
             value: page.cfg_dockHeight > 0 ? page.cfg_dockHeight : 42
-            onValueModified: page.cfg_dockHeight = value
+            onValueModified: {
+                page.cfg_dockHeight = value
+                value = Qt.binding(() => page.cfg_dockHeight > 0 ? page.cfg_dockHeight : 42)
+            }
             textFromValue: (v, locale) => i18n("%1 px", v)
             valueFromText: (text, locale) => parseInt(text)
         }
@@ -323,21 +344,39 @@ KCMUtils.SimpleKCM {
 
         QQC2.RadioButton {
             Kirigami.FormData.label: i18n("App names:")
+            id: namesOff
             text: i18n("Off")
             checked: page.nameMode === 0
-            onToggled: if (checked) page.setNameMode(0)
+            onToggled: {
+                if (checked) {
+                    page.setNameMode(0)
+                }
+                checked = Qt.binding(() => page.nameMode === 0)
+            }
         }
 
         QQC2.RadioButton {
+            id: namesHover
             text: i18n("On hover, for apps without a preview")
             checked: page.nameMode === 1
-            onToggled: if (checked) page.setNameMode(1)
+            onToggled: {
+                if (checked) {
+                    page.setNameMode(1)
+                }
+                checked = Qt.binding(() => page.nameMode === 1)
+            }
         }
 
         QQC2.RadioButton {
+            id: namesAlways
             text: i18n("Always, under the icons")
             checked: page.nameMode === 2
-            onToggled: if (checked) page.setNameMode(2)
+            onToggled: {
+                if (checked) {
+                    page.setNameMode(2)
+                }
+                checked = Qt.binding(() => page.nameMode === 2)
+            }
         }
 
         QQC2.Label {

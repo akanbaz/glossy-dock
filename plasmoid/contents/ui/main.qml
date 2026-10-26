@@ -319,7 +319,57 @@ PlasmoidItem {
     }
     onSlotsChanged: {
         logSlots()
+        logDrawn()
         measureIcons()
+    }
+
+    // Layout decisions and optional features, for troubleshooting and tests.
+    readonly property string layoutState: "alone=" + aloneInPanel + " iconSize=" + iconSize
+        + " trailingGap=" + trailingGap + " vertical=" + vertical
+        + " configure=" + (Plasmoid.internalAction("configure") !== null)
+        + " editPanel=" + (!!Plasmoid.containment && Plasmoid.containment.internalAction("configure") !== null)
+        + " dbus=" + (kwin.status === Loader.Ready) + " actions=" + (actionRunner.status === Loader.Ready)
+    onLayoutStateChanged: {
+        if (debugLog) {
+            console.info("glossydock-layout:", Plasmoid.id, layoutState)
+        }
+    }
+
+    // The size each icon is drawn at (after evening out built-in padding).
+    function logDrawn() {
+        if (debugLog) {
+            console.info("glossydock-drawn:", Plasmoid.id, slots.map(s => (s.name || s.appId) + "=" + drawnSize(s)).join(" | "))
+        }
+    }
+    onFillTickChanged: logDrawn()
+    onEvenIconSizesChanged: {
+        measureIcons()
+        logDrawn()
+    }
+
+    // Test hook (debugLog only): open a slot's menu or preview, set hover, or close popups.
+    readonly property string debugAction: Plasmoid.configuration.debugAction
+    onDebugActionChanged: {
+        if (!debugLog || !debugAction) {
+            return
+        }
+        const [verb, arg] = debugAction.split("#")[0].split(":")
+        const i = parseInt(arg)
+        const cell = repeater.itemAt(i)
+        if (verb === "menu" && cell) {
+            openMenu(i, cell)
+        } else if (verb === "preview" && cell) {
+            cell.showToolTip()
+        } else if (verb === "hover") {
+            hoverIndex = isNaN(i) ? -1 : i
+        } else if (verb === "close") {
+            menu.visible = false
+            hoverIndex = -1
+            for (let j = 0; j < repeater.count; j++) {
+                repeater.itemAt(j).hideImmediately()
+            }
+        }
+        console.info("glossydock-debug:", Plasmoid.id, debugAction)
     }
     onSlotCountChanged: hoverIndex = -1
 
@@ -358,8 +408,10 @@ PlasmoidItem {
             }
         }
     }
-    onIconSizeChanged: measureIcons()
-    onEvenIconSizesChanged: measureIcons()
+    onIconSizeChanged: {
+        measureIcons()
+        logDrawn()
+    }
 
     // Size to draw an icon at so its artwork matches a full-bleed icon of iconSize.
     function drawnSize(s) {
@@ -464,12 +516,19 @@ PlasmoidItem {
         }
     }
 
-    function activateWindowRow(row) {
-        tasksModel.requestActivate(tasksModel.index(row, 0))
+    // Preview cards act later (on click), so they name windows by id, not by row.
+    function activateWindowById(id) {
+        const r = windowRow(id)
+        if (r >= 0) {
+            tasksModel.requestActivate(tasksModel.index(r, 0))
+        }
     }
 
-    function closeWindowRow(row) {
-        tasksModel.requestClose(tasksModel.index(row, 0))
+    function closeWindowById(id) {
+        const r = windowRow(id)
+        if (r >= 0) {
+            tasksModel.requestClose(tasksModel.index(r, 0))
+        }
     }
 
     function setPinned(i, pinned) {
@@ -502,6 +561,11 @@ PlasmoidItem {
     Loader {
         id: kwin
         source: "DBusBridge.qml"
+        onStatusChanged: {
+            if (status === Loader.Error) {
+                console.warn("Glossy Dock: the Plasma D-Bus QML module is missing; window peek, Show all windows, dock height and shared settings are off")
+            }
+        }
     }
 
     // ---------------------------------------------------------------- shared settings
@@ -573,6 +637,11 @@ PlasmoidItem {
     Loader {
         id: actionRunner
         source: "ActionRunner.qml"
+        onStatusChanged: {
+            if (status === Loader.Error) {
+                console.warn("Glossy Dock: the Plasma5Support QML module is missing; apps' own actions won't be in the menu")
+            }
+        }
     }
 
     Connections {

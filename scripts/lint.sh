@@ -129,6 +129,19 @@ else
     skip "shellcheck not installed"
 fi
 
+# actions.sh must read a launcher given as a percent-encoded file:// URL (a folder with a
+# space and a non-ASCII name), using plain `sh` (dash on Debian/Ubuntu, as in CI).
+actdir="$tmp/My Apps é"
+mkdir -p "$actdir"
+printf '[Desktop Entry]\nType=Application\nName=Test\nExec=true\nActions=first;second;\n\n[Desktop Action first]\nName=First action\nExec=true\n\n[Desktop Action second]\nName=Second action\nIcon=document-new\nExec=true\n' >"$actdir/test.desktop"
+encoded=$(python3 -c 'import sys, urllib.parse; print("file://" + urllib.parse.quote(sys.argv[1]))' "$actdir/test.desktop")
+listed=$(sh plasmoid/contents/code/actions.sh list "$encoded" | cut -f1,2 | tr '\t\n' ':;')
+if [[ "$listed" == "first:First action;second:Second action;" ]]; then
+    pass "actions.sh lists actions from a percent-encoded file:// launcher"
+else
+    fail "actions.sh on $encoded listed [$listed]"
+fi
+
 # actions.sh must stay quiet and succeed on bad input.
 out=$(sh plasmoid/contents/code/actions.sh list applications:does-not-exist.desktop; sh plasmoid/contents/code/actions.sh list "")
 if [[ $? -eq 0 && -z "$out" ]]; then pass "actions.sh handles missing launchers"; else fail "actions.sh on missing launcher"; fi
