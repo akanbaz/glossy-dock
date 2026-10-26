@@ -35,6 +35,7 @@ PlasmoidItem {
     readonly property bool showNames: Plasmoid.configuration.showNameTooltips
     readonly property bool showLabels: Plasmoid.configuration.showLabels
     readonly property bool dimMinimized: Plasmoid.configuration.dimMinimized
+    readonly property bool evenIconSizes: Plasmoid.configuration.evenIconSizes
 
     // ---------------------------------------------------------------- geometry
 
@@ -316,8 +317,61 @@ PlasmoidItem {
             console.info("glossydock-slots:", Plasmoid.id, slots.map(s => (s.pinned ? "" : "+") + (s.name || s.appId)).join(" | "))
         }
     }
-    onSlotsChanged: logSlots()
+    onSlotsChanged: {
+        logSlots()
+        measureIcons()
+    }
     onSlotCountChanged: hoverIndex = -1
+
+    // ---------------------------------------------------------------- even icon sizes
+
+    // How much of its box each icon's artwork fills, per app and size ("key@size" -> 0..1].
+    // Icons with built-in transparent padding are drawn larger so all icons look alike.
+    property var iconFill: ({})
+    property int fillTick: 0
+    readonly property real maxIconBoost: 1.3
+
+    IconFitter {
+        id: fitter
+        onMeasured: (key, fill) => {
+            root.iconFill[key] = fill
+            root.fillTick++
+            if (root.debugLog) {
+                console.info("glossydock-fit:", Plasmoid.id, key.split("@")[0], fill.toFixed(3))
+            }
+        }
+    }
+
+    function fillKey(s) {
+        return s.key + "@" + iconSize
+    }
+
+    function measureIcons() {
+        if (!evenIconSizes) {
+            return
+        }
+        for (const s of slots) {
+            const k = fillKey(s)
+            if (s.icon && iconFill[k] === undefined) {
+                iconFill[k] = -1 // queued
+                fitter.measure(k, s.icon, iconSize)
+            }
+        }
+    }
+    onIconSizeChanged: measureIcons()
+    onEvenIconSizesChanged: measureIcons()
+
+    // Size to draw an icon at so its artwork matches a full-bleed icon of iconSize.
+    function drawnSize(s) {
+        if (fillTick < 0 || !evenIconSizes || !s || !s.key) {
+            return iconSize
+        }
+        const fill = iconFill[fillKey(s)]
+        if (!(fill > 0) || fill >= 0.98) {
+            return iconSize
+        }
+        return Math.round(iconSize * Math.min(maxIconBoost, 1 / fill))
+    }
     onDebugLogChanged: logSlots()
 
     // ---------------------------------------------------------------- actions
@@ -590,7 +644,9 @@ PlasmoidItem {
             readonly property bool usePreview: isOpen && root.showPreviews
             readonly property real slotStart: index === 0 ? 0 : index * root.pitch - root.gap / 2
             readonly property real slotEnd: index === root.slotCount - 1 ? root.dockLength : index * root.pitch + root.itemLength + root.gap / 2
-            property alias iconItem: icon
+            // The icon's box: where the icon sits, what names, indicators and the minimize
+            // animation line up with. The drawn icon may be larger (see drawnSize).
+            property alias iconItem: iconBox
 
             x: root.vertical ? 0 : slotStart
             y: root.vertical ? slotStart : 0
@@ -632,14 +688,26 @@ PlasmoidItem {
             onXChanged: root.publishGeometry(index)
             onYChanged: root.publishGeometry(index)
 
-            Kirigami.Icon {
-                id: icon
+            Item {
+                id: iconBox
                 readonly property real along: cell.index * root.pitch - cell.slotStart
                 x: root.vertical ? Math.round((parent.width - width) / 2) : along
                 y: root.vertical ? along : root.iconCrossStart
                 width: root.iconSize
                 height: root.iconSize
+            }
+
+            Kirigami.Icon {
+                id: icon
+                readonly property int drawn: root.drawnSize(cell.st)
+                x: iconBox.x + Math.round((root.iconSize - drawn) / 2)
+                y: iconBox.y + Math.round((root.iconSize - drawn) / 2)
+                width: drawn
+                height: drawn
                 source: cell.st.icon
+                // Draw at the real size; rounding to a standard icon size (22, 32...) would
+                // shrink a 29px icon to 22.
+                roundToIconSize: false
                 animated: false
                 opacity: root.dimMinimized && cell.isMinimized ? 0.5 : 1
                 transformOrigin: root.showLabels ? Item.Bottom : Item.Center
@@ -652,8 +720,8 @@ PlasmoidItem {
             PlasmaComponents3.Label {
                 visible: root.showLabels
                 width: root.vertical ? parent.width - 4 : root.pitch - 2
-                x: root.vertical ? 2 : Math.round(icon.x + (root.iconSize - width) / 2)
-                y: icon.y + root.iconSize + root.labelGap
+                x: root.vertical ? 2 : Math.round(iconBox.x + (root.iconSize - width) / 2)
+                y: iconBox.y + root.iconSize + root.labelGap
                 height: root.labelBlock - root.labelGap
                 text: cell.st.name
                 font: Kirigami.Theme.smallFont
@@ -673,13 +741,13 @@ PlasmoidItem {
                 width: root.vertical ? 2 : length
                 height: root.vertical ? length : 2
                 x: root.vertical
-                    ? (edge === PlasmaCore.Types.LeftEdge ? icon.x - 4 : icon.x + root.iconSize + 2)
-                    : Math.round(icon.x + (root.iconSize - width) / 2)
+                    ? (edge === PlasmaCore.Types.LeftEdge ? iconBox.x - 4 : iconBox.x + root.iconSize + 2)
+                    : Math.round(iconBox.x + (root.iconSize - width) / 2)
                 y: root.vertical
-                    ? Math.round(icon.y + (root.iconSize - height) / 2)
+                    ? Math.round(iconBox.y + (root.iconSize - height) / 2)
                     : (edge === PlasmaCore.Types.TopEdge
-                        ? Math.max(0, icon.y - 4)
-                        : Math.min(parent.height - 2, icon.y + root.iconSize + root.crossLabel + 2))
+                        ? Math.max(0, iconBox.y - 4)
+                        : Math.min(parent.height - 2, iconBox.y + root.iconSize + root.crossLabel + 2))
                 radius: 1
                 color: Kirigami.Theme.textColor
                 opacity: cell.isActive ? 1 : cell.isMinimized ? 0.35 : 0.6

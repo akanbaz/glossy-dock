@@ -23,6 +23,7 @@ KCMUtils.SimpleKCM {
     property bool cfg_showLabels
     property alias cfg_dimMinimized: dimMinimized.checked
     property int cfg_iconSize
+    property alias cfg_evenIconSizes: evenIconSizes.checked
     property int cfg_dockHeight
     property alias cfg_iconSpacing: spacing.value
     property alias cfg_zoomPercent: zoom.value
@@ -217,6 +218,19 @@ KCMUtils.SimpleKCM {
             onValueModified: page.cfg_iconSize = value
             textFromValue: (v, locale) => i18n("%1 px", v)
             valueFromText: (text, locale) => parseInt(text)
+        }
+
+        QQC2.CheckBox {
+            id: evenIconSizes
+            text: i18n("Even out icon sizes")
+        }
+
+        QQC2.Label {
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
+            font: Kirigami.Theme.smallFont
+            opacity: 0.7
+            text: i18n("Some icons come with empty space around them and look smaller than others; draw those larger so all icons look the same size.")
         }
 
         QQC2.CheckBox {

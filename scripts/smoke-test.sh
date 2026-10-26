@@ -271,6 +271,16 @@ step "Installing packages into the temporary home, with the Glossy Glass style"
 style=$(kreadconfig6 --file plasmarc --group Theme --key name 2>/dev/null || true)
 [[ "$style" == "glossy-glass" ]] || fail "install.sh --apply-style didn't select Glossy Glass (Plasma style is '$style')"
 
+# A test app whose icon has known built-in padding (artwork fills 75% of the image).
+mkdir -p "$XDG_DATA_HOME/applications"
+cat >"$XDG_DATA_HOME/applications/glossy-test-padded.desktop" <<DESKTOP
+[Desktop Entry]
+Type=Application
+Name=Padded Test App
+Exec=true
+Icon=$ROOT/tests/icons/inset.png
+DESKTOP
+
 # A fresh HOME has no application cache yet; until it's built, apps can't be looked up.
 kbuildsycoca6 --noincremental >"$work/sycoca.log" 2>&1 || true
 
@@ -431,6 +441,28 @@ wait_bottom "$base" "open app unpinned, it stays as an open app"
 kill "$konsole_pid" 2>/dev/null || true
 wait_apps "$bottom_id" "System Settings"
 wait_bottom $((base - pitch)) "that app closed, slot removed"
+
+# ------------------------------------------------------------------- even icon sizes
+
+step "Even icon sizes"
+if timeout 30 "$qml_bin" "$ROOT/tests/IconFitterTest.qml" >"$work/fitter.log" 2>&1 && grep -q "PASS: icon fitter" "$work/fitter.log"; then
+    echo "    icon fitter measures known artwork correctly"
+else
+    fail "icon fitter:"
+    sed 's/^/    /' "$work/fitter.log" | tail -10
+fi
+# The top dock measures its icons; the padded test app must come out near 75%.
+set_dock top launchers "'applications:systemsettings.desktop,applications:glossy-test-padded.desktop'"
+fill_of() { grep -oP "glossydock-fit: $top_id $1 \\K[0-9.]+" "$work/plasma.log" | tail -1 || true; }
+for ((i = 0; i < 60; i++)); do
+    [[ -n "$(fill_of glossy-test-padded)" && -n "$(fill_of systemsettings)" ]] && break
+    sleep 0.25
+done
+padded=$(fill_of glossy-test-padded)
+settings=$(fill_of systemsettings)
+echo "    measured artwork fill: padded test app ${padded:-?}, System Settings ${settings:-?}"
+awk -v p="${padded:-0}" 'BEGIN { exit !(p > 0.70 && p < 0.80) }' || fail "padded test app should measure about 0.75, got ${padded:-nothing}"
+awk -v s="${settings:-0}" 'BEGIN { exit !(s > 0.85) }' || fail "System Settings should measure close to full, got ${settings:-nothing}"
 
 # ------------------------------------------------------------------- 6. settings page
 

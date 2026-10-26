@@ -13,6 +13,8 @@ together or separately:
 
 - **One fixed slot per pinned app.** Opening an app never adds, duplicates or shifts a pinned icon.
 - **Open apps that aren't pinned** get a slot after the pins (can be turned off).
+- **Icons that look the same size.** Icons with built-in empty space around their artwork
+  are measured and drawn larger to match the others (can be turned off).
 - **Hover magnification.** The hovered icon grows, its neighbours a little (both adjustable);
   the bar never resizes.
 - **App names** off, on hover, or always shown under the icons.

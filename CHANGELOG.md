@@ -4,6 +4,11 @@
 
 - Settings: dock height (sets the panel's thickness), separate magnification for the icons
   next to the hovered one, and app names off / on hover / always under the icons.
+- Icons are drawn at the dock's real icon size (they were rounded down to the nearest
+  standard size, e.g. 29px icons drawn at 22px).
+- "Even out icon sizes" (on by default): icons whose artwork has built-in empty space are
+  measured once and drawn larger (up to 1.3x), so all icons look the same size and hover
+  zoom looks the same on all of them.
 - Glossy Glass: tight ends on every edge at any panel height (they used to grow on taller
   top, left and right panels), and fixed dark-glass colours so text and indicators stay
   readable with a light colour scheme.

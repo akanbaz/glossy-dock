@@ -18,6 +18,10 @@
       <min>0</min>
       <max>256</max>
     </entry>
+    <entry name="evenIconSizes" type="Bool">
+      <label>Draw icons that have built-in empty space larger, so all icons look the same size</label>
+      <default>true</default>
+    </entry>
     <entry name="iconSpacing" type="Int">
       <label>Gap between icons in pixels</label>
       <default>18</default>
