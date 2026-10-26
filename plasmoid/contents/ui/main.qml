@@ -504,6 +504,50 @@ PlasmoidItem {
         source: "DBusBridge.qml"
     }
 
+    // ---------------------------------------------------------------- shared settings
+    // With "Use these settings on all docks" on, a change to any look-and-size setting is
+    // copied to every other Glossy Dock. Pins and "show open apps" stay per dock. Docks that
+    // already have the value are left alone, so the copy doesn't bounce back and forth.
+
+    readonly property var sharedKeys: ["iconSize", "evenIconSizes", "iconSpacing", "zoomPercent",
+        "neighbourZoomPercent", "dockHeight", "showLabels", "showNameTooltips", "showPreviews",
+        "peekWindows", "dimMinimized", "syncAllDocks"]
+
+    function shareSettings(keys) {
+        if (!Plasmoid.configuration.syncAllDocks || !kwin.item || !inPanel) {
+            return
+        }
+        const values = {}
+        for (const key of keys) {
+            values[key] = Plasmoid.configuration[key]
+        }
+        kwin.item.evaluateScript(
+            "var values = " + JSON.stringify(values) + ";\n"
+            + "panels().forEach(function (p) {\n"
+            + "  p.widgets('" + Plasmoid.pluginName + "').forEach(function (w) {\n"
+            + "    if (w.id == " + Plasmoid.id + ") { return; }\n"
+            + "    w.currentConfigGroup = ['General'];\n"
+            + "    for (var key in values) {\n"
+            + "      if (String(w.readConfig(key)) !== String(values[key])) { w.writeConfig(key, values[key]); }\n"
+            + "    }\n"
+            + "  });\n"
+            + "});")
+    }
+
+    // One watcher per shared setting (changes from the settings page, scripts, or another dock).
+    Instantiator {
+        model: root.sharedKeys
+        delegate: QtObject {
+            id: watch
+            required property string modelData
+            readonly property var value: Plasmoid.configuration[modelData]
+            onValueChanged: {
+                // Turning sharing on copies everything; any other change copies just itself.
+                root.shareSettings(watch.modelData === "syncAllDocks" ? root.sharedKeys : [watch.modelData])
+            }
+        }
+    }
+
     // "Dock height" setting: resize this dock's panel when the setting changes (not at
     // start-up, so a height changed later in Plasma's own panel editor is left alone).
     readonly property int dockHeight: Plasmoid.configuration.dockHeight

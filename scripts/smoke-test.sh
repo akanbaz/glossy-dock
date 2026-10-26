@@ -17,7 +17,9 @@
 #   5. the dock height setting resizes the panel; names under the icons lengthen a
 #      vertical dock by the same amount per icon and leave a horizontal dock's length alone
 #   6. the settings page loads and its pin and name logic holds
-#   7. uninstall.sh --remove-docks removes the dock panels and the packages
+#   7. with "use these settings on all docks", a dock's settings reach the others, while
+#      each dock keeps its own pins
+#   8. uninstall.sh --remove-docks removes the dock panels and the packages
 #
 # Any error or warning that Plasma logs from the dock fails the test.
 #
@@ -334,6 +336,8 @@ shell "
         panel.hiding = 'none';
         var w = panel.addWidget('$WIDGET_ID');
         w.currentConfigGroup = ['General'];
+        // These docks get different settings on purpose; sharing is tested later.
+        w.writeConfig('syncAllDocks', false);
         w.writeConfig('debugLog', true);
         // Apps every Plasma test environment has, plus one that doesn't exist and must be
         // skipped rather than shown as a blank slot.
@@ -483,7 +487,28 @@ else
 fi
 fi # has_gpu
 
-# ------------------------------------------------------------------- 7. uninstall.sh
+# ------------------------------------------------------------------- 8. uninstall.sh
+
+# ------------------------------------------------------------------- 7. shared settings
+
+step "Shared settings across docks"
+read_setting() {
+    shell "
+        panels().forEach(function (p) {
+            if (p.location !== '$1') { return; }
+            p.widgets('$WIDGET_ID').forEach(function (w) { w.currentConfigGroup = ['General']; print(w.readConfig('$2')); });
+        });
+    "
+}
+top_pins=$(read_setting top launchers)
+left_pins=$(read_setting left launchers)
+set_dock bottom syncAllDocks true
+wait_value "top dock's icon size after sharing from the bottom dock" "$(read_setting bottom iconSize)" read_setting top iconSize
+set_dock bottom iconSize 30
+wait_value "top dock's icon size after changing it on the bottom dock" 30 read_setting top iconSize
+wait_value "left dock's icon size after changing it on the bottom dock" 30 read_setting left iconSize
+[[ "$(read_setting top launchers)" == "$top_pins" && "$(read_setting left launchers)" == "$left_pins" ]] \
+    && echo "    each dock kept its own pins" || fail "sharing settings changed a dock's pins"
 
 # Removing the widget makes Plasma log about it vanishing; judge errors up to this point.
 log_lines_before_uninstall=$(wc -l <"$work/plasma.log")

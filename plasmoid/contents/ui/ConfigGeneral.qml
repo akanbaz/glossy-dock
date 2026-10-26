@@ -16,6 +16,7 @@ KCMUtils.SimpleKCM {
     id: page
 
     property string cfg_launchers
+    property alias cfg_syncAllDocks: syncAllDocks.checked
     property alias cfg_showOpenApps: showOpenApps.checked
     property alias cfg_showPreviews: showPreviews.checked
     property alias cfg_peekWindows: peekWindows.checked
@@ -195,6 +196,24 @@ KCMUtils.SimpleKCM {
                 opacity: 0.7
                 text: i18n("Tip: right-click any open app in the dock and choose “Pin to Dock”.")
             }
+        }
+
+        Item {
+            Kirigami.FormData.isSection: true
+        }
+
+        QQC2.CheckBox {
+            id: syncAllDocks
+            Kirigami.FormData.label: i18n("All docks:")
+            text: i18n("Use these settings on all docks")
+        }
+
+        QQC2.Label {
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
+            font: Kirigami.Theme.smallFont
+            opacity: 0.7
+            text: i18n("Size, spacing, magnification, names and behaviour then match on every Glossy Dock. Pins and \u201cShow open apps\u201d stay per dock.")
         }
 
         Item {

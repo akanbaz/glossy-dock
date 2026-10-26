@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- "Use these settings on all docks" (on by default): changing size, spacing,
+  magnification, names or behaviour on one dock applies it to every Glossy Dock. Pins and
+  "Show open apps" stay per dock.
 - The right-click menu ends with "Configure Glossy Dock…" and "Edit Panel…": the dock fills
   its panel, so there was no other place to right-click for them.
 - Settings: dock height (sets the panel's thickness), separate magnification for the icons

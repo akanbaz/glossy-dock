@@ -23,6 +23,18 @@ Item {
         })
     }
 
+    // Run a Plasma desktop script (the same API as Plasma's scripting console).
+    function evaluateScript(script) {
+        DBus.SessionBus.asyncCall({
+            service: "org.kde.plasmashell",
+            path: "/PlasmaShell",
+            iface: "org.kde.PlasmaShell",
+            member: "evaluateScript",
+            arguments: [String(script)],
+            signature: "(s)"
+        })
+    }
+
     // Set the thickness of the panel that holds this applet, through Plasma's scripting API
     // (a widget can't resize its own panel).
     function setPanelThickness(appletId, px) {

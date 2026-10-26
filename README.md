@@ -89,7 +89,9 @@ Everything installs into `~/.local/share/plasma` for your user only; no root nee
 - **Settings**: right-click any icon in the dock → *Configure Glossy Dock…* (at the bottom
   of the menu). *Edit Panel…* is there too.
 
-Pins are stored per dock, so each screen can have its own. Open/focused state is shared.
+Pins (and "Show open apps") are per dock, so each screen can have its own. Look and size
+settings are shared by all docks unless you untick *Use these settings on all docks*.
+Open/focused state is shared.
 
 ## Upgrade
 

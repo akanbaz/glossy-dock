@@ -8,6 +8,10 @@
       <label>Pinned launchers, comma separated (applications:foo.desktop, preferred://browser, ...)</label>
       <default>preferred://filemanager,preferred://browser,applications:org.kde.konsole.desktop,applications:systemsettings.desktop</default>
     </entry>
+    <entry name="syncAllDocks" type="Bool">
+      <label>Use this dock's look and size settings on every Glossy Dock (pins stay per dock)</label>
+      <default>true</default>
+    </entry>
     <entry name="showOpenApps" type="Bool">
       <label>Show apps that are open but not pinned after the pinned apps</label>
       <default>true</default>
