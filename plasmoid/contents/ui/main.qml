@@ -743,19 +743,30 @@ PlasmoidItem {
 
             Kirigami.Icon {
                 id: icon
+                // Size the icon appears at when not hovered (larger than the box for icons
+                // with built-in padding, see drawnSize).
                 readonly property int drawn: root.drawnSize(cell.st)
-                x: iconBox.x + Math.round((root.iconSize - drawn) / 2)
-                y: iconBox.y + Math.round((root.iconSize - drawn) / 2)
-                width: drawn
-                height: drawn
+                // Rendered at its fully zoomed size and scaled down when not hovered:
+                // shrinking a sharp image stays sharp, while stretching a small one for the
+                // zoom made hovered icons look blurry.
+                readonly property int full: Math.ceil(drawn * root.hoverScale)
+                width: full
+                height: full
+                x: iconBox.x + Math.round((root.iconSize - full) / 2)
+                // With names under the icons they grow upward from their bottom edge, so keep
+                // that edge where an unscaled icon of size `drawn` would have it.
+                y: root.showLabels
+                    ? iconBox.y + Math.round((root.iconSize + drawn) / 2) - full
+                    : iconBox.y + Math.round((root.iconSize - full) / 2)
                 source: cell.st.icon
                 // Draw at the real size; rounding to a standard icon size (22, 32...) would
                 // shrink a 29px icon to 22.
                 roundToIconSize: false
                 animated: false
+                smooth: true
                 opacity: root.dimMinimized && cell.isMinimized ? 0.5 : 1
                 transformOrigin: root.showLabels ? Item.Bottom : Item.Center
-                scale: root.scaleFor(cell.index)
+                scale: root.scaleFor(cell.index) * drawn / full
                 Behavior on scale {
                     NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
                 }

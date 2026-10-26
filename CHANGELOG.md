@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Hover zoom stays sharp: icons are rendered at their zoomed size and scaled down at rest,
+  instead of being stretched (and blurred) when hovered.
 - "Use these settings on all docks" (on by default): changing size, spacing,
   magnification, names or behaviour on one dock applies it to every Glossy Dock. Pins and
   "Show open apps" stay per dock.
