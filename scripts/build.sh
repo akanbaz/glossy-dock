@@ -19,6 +19,7 @@ rm -rf "$DIST"
 mkdir -p "$DIST"
 
 python3 - "$ROOT" "$DIST" "$version" <<'EOF'
+import gzip
 import os
 import sys
 import tarfile
@@ -26,7 +27,8 @@ import zipfile
 
 root, dist, version = sys.argv[1:4]
 
-# Fixed timestamps and ordering so the same sources always give the same archives.
+# Fixed timestamps, permissions and ordering so the same sources give the same archives.
+# (Byte-identical on machines with the same zlib; the files inside match everywhere.)
 EPOCH = 315532800  # 1980-01-01, the earliest time zip can store
 
 
@@ -55,7 +57,9 @@ def tar_paths(out, entries):
         info.mtime = EPOCH
         return info
 
-    with tarfile.open(out, "w:gz") as t:
+    # The gzip header records a timestamp too; pin it, or every build differs.
+    with open(out, "wb") as raw, gzip.GzipFile(fileobj=raw, mode="wb", mtime=EPOCH) as gz, \
+            tarfile.open(fileobj=gz, mode="w") as t:
         for src, arcname in entries:
             if os.path.isdir(src):
                 for path, rel in files_under(src):
