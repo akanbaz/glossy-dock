@@ -138,6 +138,12 @@ skipped. Run it locally before releases.
 Releases: bump `Version` in the three `metadata.json` files (lint checks they match), add a
 CHANGELOG entry, then tag `v<version>` and push the tag; CI builds and publishes the release.
 
+## Design notes
+
+[docs/design-rca.md](docs/design-rca.md) is a root-cause analysis of the problems found while
+building the dock, grouped by the design decision behind them, with the guardrails that now
+catch each class of problem.
+
 ## License
 
 GPL-2.0-or-later. See [LICENSE](LICENSE).
