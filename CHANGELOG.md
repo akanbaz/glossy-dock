@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The right-click menu ends with "Configure Glossy Dock…" and "Edit Panel…": the dock fills
+  its panel, so there was no other place to right-click for them.
 - Settings: dock height (sets the panel's thickness), separate magnification for the icons
   next to the hovered one, and app names off / on hover / always under the icons.
 - Icons are drawn at the dock's real icon size (they were rounded down to the nearest

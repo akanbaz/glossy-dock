@@ -86,7 +86,8 @@ Everything installs into `~/.local/share/plasma` for your user only; no root nee
   icons, a dock height of 56 px or more leaves room for both.
 - **Pin an app**: open it, right-click its icon in the dock → *Pin to Dock*. Or add it by
   desktop-file name in the settings (e.g. `org.kde.dolphin`).
-- **Settings**: right-click the dock → *Configure Glossy Dock…*
+- **Settings**: right-click any icon in the dock → *Configure Glossy Dock…* (at the bottom
+  of the menu). *Edit Panel…* is there too.
 
 Pins are stored per dock, so each screen can have its own. Open/focused state is shared.
 

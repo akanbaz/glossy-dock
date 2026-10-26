@@ -871,6 +871,20 @@ PlasmoidItem {
                  "window-close", forSlot(j => root.closeAll(j)))
         }
 
+        // The dock fills its whole panel and its menu replaces Plasma's, so offer Plasma's
+        // own "configure this widget" and "edit this panel" here.
+        const configure = Plasmoid.internalAction("configure")
+        const editPanel = Plasmoid.containment ? Plasmoid.containment.internalAction("configure") : null
+        if (configure || editPanel) {
+            separator()
+            if (configure) {
+                item(i18n("Configure Glossy Dock…"), "configure", () => configure.trigger())
+            }
+            if (editPanel) {
+                item(i18n("Edit Panel…"), "document-edit", () => editPanel.trigger())
+            }
+        }
+
         menu.popup(parent, entries)
     }
 }
